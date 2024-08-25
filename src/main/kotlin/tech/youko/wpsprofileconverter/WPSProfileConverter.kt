@@ -7,7 +7,7 @@ import kotlinx.cli.required
 import java.io.File
 
 fun main(args: Array<String>) {
-    val parser = ArgParser("WPSProfileConverter")
+    val parser = ArgParser("wps-profile-converter")
     val originalFile by parser.option(ArgType.String, shortName = "o", description = "Original INI file").required()
     val newFile by parser.option(ArgType.String, shortName = "n", description = "New INI file").required()
     val shouldEncrypt by parser.option(ArgType.Boolean, shortName = "e", description = "Should encrypt the file").default(false)
