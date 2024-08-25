@@ -1,6 +1,8 @@
 ﻿# WPS Office 配置文件加解密工具
 
-从某个版本开始，WPS Office 的 OEM.INI 中所有的配置项都被加密了，本工具即可实现对配置文件的加解密。
+从某个版本开始，WPS Office 的 OEM.INI 中所有的配置项都被加密了，这使得定制变得格外困难。
+
+经过逆向分析，我们得到了配置文件的加密方式和密钥。现在，使用本工具即可实现对 OEM.INI 配置文件的加解密。
 
 ## 使用方式
 
@@ -23,8 +25,8 @@ java -jar wps-profile-converter.jar <options_list>
     - 类型：Boolean
     - 默认值：false
 
-- `--shouldEscapeContent, -s`
-    - 是否转义内容（否则带换行的内容会导致无法解析）
+- `--shouldNotEscape, -s`
+    - 是否不转义内容（例如带换行的内容会导致无法解析）
     - 类型：Boolean
     - 默认值：false
 
