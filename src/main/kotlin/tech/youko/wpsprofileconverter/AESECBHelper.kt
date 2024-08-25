@@ -5,9 +5,9 @@ import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
-open class AESHelper(secretKey: String, transformationWithoutAlgorithm: String) {
+open class AESECBHelper(secretKey: String, fillingMethod: String) {
     private val key: Key = SecretKeySpec(secretKey.toByteArray(), "AES")
-    private val transformation: String = "AES/$transformationWithoutAlgorithm"
+    private val transformation: String = "AES/ECB/$fillingMethod"
 
     open fun encrypt(string: String): String {
         val cipher = Cipher.getInstance(transformation)

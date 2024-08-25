@@ -1,8 +1,8 @@
 package tech.youko.wpsprofileconverter
 
-class WPSCryptoHelper : AESHelper(
+class WPSCryptoHelper : AESECBHelper(
     "F9AF610AE6164C73B78B0A99D8B72890",
-    "ECB/PKCS5Padding"
+    "PKCS5Padding"
 ) {
     override fun encrypt(string: String): String {
         return super.encrypt(string)
