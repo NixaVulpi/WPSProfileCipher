@@ -13,15 +13,19 @@ java -jar wps-profile-converter.jar <options_list>
 ### 选项列表
 
 - `--originalFile, -o`
-    - 原始的 INI 文件（必填项）
+    - 原始的 INI 文件（如果未提供 `text` 则必填）
     - 类型：String
 
 - `--newFile, -n`
-    - 新的 INI 文件（必填项）
+    - 新的 INI 文件（如果未提供 `text` 则必填）
+    - 类型：String
+
+- `--text, -t`
+    - 文本（如果提供则 `originalFile` 和 `newFile` 将被忽略）
     - 类型：String
 
 - `--shouldEncrypt, -e`
-    - 是否加密文件（否则为解密）
+    - 是否加密内容（否则为解密）
     - 类型：Boolean
     - 默认值：false
 

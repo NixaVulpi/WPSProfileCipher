@@ -1,6 +1,6 @@
 package tech.youko.wpsprofileconverter
 
-class WPSCryptoHelper : AESECBHelper(
+object WPSCryptoHelper : AESECBHelper(
     "F9AF610AE6164C73B78B0A99D8B72890",
     "PKCS5Padding"
 ) {
