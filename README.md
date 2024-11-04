@@ -7,7 +7,7 @@
 ## 使用方式
 
 ```txt
-java -jar wps-profile-converter.jar <options_list>
+java -jar wps-profile-cipher.jar <options_list>
 ```
 
 ### 选项列表

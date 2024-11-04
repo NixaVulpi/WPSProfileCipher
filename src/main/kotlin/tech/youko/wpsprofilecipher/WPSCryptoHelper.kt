@@ -1,4 +1,4 @@
-package tech.youko.wpsprofileconverter
+package tech.youko.wpsprofilecipher
 
 object WPSCryptoHelper : AESECBHelper(
     "F9AF610AE6164C73B78B0A99D8B72890",

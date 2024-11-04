@@ -1,4 +1,4 @@
-package tech.youko.wpsprofileconverter
+package tech.youko.wpsprofilecipher
 
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
@@ -6,7 +6,7 @@ import kotlinx.cli.default
 import java.io.File
 
 fun main(args: Array<String>) {
-    val parser = ArgParser("wps-profile-converter")
+    val parser = ArgParser("wps-profile-cipher")
     val originalFile by parser.option(ArgType.String, shortName = "o", description = "Original INI file (required if text is not provided)")
     val newFile by parser.option(ArgType.String, shortName = "n", description = "New INI file (required if text is not provided)")
     val text by parser.option(ArgType.String, shortName = "t", description = "Text (if provided, originalFile and newFile are ignored)")

@@ -1,4 +1,4 @@
-package tech.youko.wpsprofileconverter
+package tech.youko.wpsprofilecipher
 
 import org.ini4j.Config
 import org.ini4j.Ini

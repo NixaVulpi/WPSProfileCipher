@@ -26,5 +26,5 @@ kotlin {
 }
 
 application {
-    mainClass = "tech.youko.wpsprofileconverter.WPSProfileConverterKt"
+    mainClass = "tech.youko.wpsprofilecipher.WPSProfileCipherKt"
 }

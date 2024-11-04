@@ -1,4 +1,4 @@
-package tech.youko.wpsprofileconverter
+package tech.youko.wpsprofilecipher
 
 import java.security.Key
 import java.util.Base64
