@@ -13,8 +13,7 @@ object WPSCryptoHelper : AESECBHelper(
 
     override fun decrypt(base64: String): String {
         return super.decrypt(
-            base64
-                .replace('_', '+')
+            base64.replace('_', '+')
                 .replace('-', '/')
                 .replace('.', '=')
         )
