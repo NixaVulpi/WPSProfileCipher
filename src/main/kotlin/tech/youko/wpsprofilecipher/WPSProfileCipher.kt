@@ -45,7 +45,7 @@ fun main(args: Array<String>) {
         }
     } catch (e: Exception) {
         if (e.message != null) {
-            println(if (e.message!!.endsWith('.')) e.message!! else e.message!!.plus('.'))
+            println("Failure: ${if (e.message!!.endsWith('.')) e.message!! else e.message!!.plus('.')}")
         }
         exitProcess(127)
     }
