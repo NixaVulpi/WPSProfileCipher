@@ -61,7 +61,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <configuration>
-                    <mainClass>tech.youko.wpsprofilecipher.WPSProfileCipherKt</mainClass>
+                    <mainClass>tech.youko.wpsprofilecipher.MainKt</mainClass>
                 </configuration>
             </plugin>
             <plugin>
@@ -70,7 +70,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>tech.youko.wpsprofilecipher.WPSProfileCipherKt</mainClass>
+                            <mainClass>tech.youko.wpsprofilecipher.MainKt</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
