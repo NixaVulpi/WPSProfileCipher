@@ -8,40 +8,49 @@ import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
     val parser = ArgParser("wps-profile-cipher")
-    val originalFile by parser.option(
+    val cipherIniFile by parser.option(
         ArgType.String,
-        shortName = "o",
-        description = "Original INI file (required if text is not provided)"
+        shortName = "c",
+        description = "Cipher INI file (required if text is not provided)"
     )
-    val newFile by parser.option(
+    val plainJsonFile by parser.option(
         ArgType.String,
-        shortName = "n",
-        description = "New INI file (required if text is not provided)"
+        shortName = "p",
+        description = "Plain JSON file (required if text is not provided)"
     )
     val text by parser.option(
         ArgType.String,
         shortName = "t",
-        description = "Text (if provided, originalFile and newFile are ignored)"
+        description = "Text (if provided, cipherIniFile and plainJsonFile are ignored)"
     )
     val shouldEncrypt by parser.option(
         ArgType.Boolean,
         shortName = "e",
         description = "Should encrypt the content"
     ).default(false)
-    val shouldNotEscape by parser.option(
-        ArgType.Boolean,
-        shortName = "s",
-        description = "Should not escape the content"
-    ).default(false)
     try {
         parser.parse(args)
+        val wpsCipher = WpsCipher()
         if (text != null) {
-            println(convertText(text!!, shouldEncrypt, !shouldNotEscape))
+            println(
+                if (shouldEncrypt) {
+                    wpsCipher.encrypt(text!!)
+                } else {
+                    wpsCipher.decrypt(text!!)
+                }
+            )
         } else {
-            require(originalFile != null && newFile != null) {
-                "Original file and new file must be provided if text is not provided."
+            require(cipherIniFile != null && plainJsonFile != null) {
+                "Cipher INI file and plain JSON file must be provided if text is not provided."
             }
-            convertProfileFile(File(originalFile!!), File(newFile!!), shouldEncrypt, !shouldNotEscape)
+            val wpsProfileFile = WpsProfileFile(wpsCipher)
+            if (shouldEncrypt) {
+                wpsProfileFile.loadPlainJson(File(plainJsonFile!!))
+                wpsProfileFile.storeCipherIni(File(cipherIniFile!!))
+            } else {
+                wpsProfileFile.loadCipherIni(File(cipherIniFile!!))
+                wpsProfileFile.storePlainJson(File(plainJsonFile!!))
+            }
         }
     } catch (e: Exception) {
         if (e.message != null) {

@@ -4,22 +4,22 @@
 
 ## 使用方式
 
-```txt
+```text
 java -jar wps-profile-cipher.jar <options_list>
 ```
 
 ### 选项列表
 
-- `--originalFile, -o`
-    - 原始的 INI 文件（如果未提供 `text` 则必填）
+- `--cipherIniFile, -c`
+    - 密文 INI 文件（如果未提供 `text` 则必填）
     - 类型：String
 
-- `--newFile, -n`
-    - 新的 INI 文件（如果未提供 `text` 则必填）
+- `--plainJsonFile, -p`
+    - 明文 JSON 文件（如果未提供 `text` 则必填）
     - 类型：String
 
 - `--text, -t`
-    - 文本（如果提供则 `originalFile` 和 `newFile` 将被忽略）
+    - 文本（如果提供则 `cipherIniFile` 和 `plainJsonFile` 将被忽略）
     - 类型：String
 
 - `--shouldEncrypt, -e`
@@ -27,13 +27,40 @@ java -jar wps-profile-cipher.jar <options_list>
     - 类型：Boolean
     - 默认值：false
 
-- `--shouldNotEscape, -s`
-    - 是否不转义内容（例如带换行的内容会导致无法解析）
-    - 类型：Boolean
-    - 默认值：false
-
 - `--help, -h`
     - 显示帮助信息
+
+## 示例
+
+- 从明文 JSON 文件加密生成密文 INI 文件：
+  ```shell
+  java -jar wps-profile-cipher.jar -p product.json -c product.dat -e
+  ```
+
+- 从密文 INI 文件解密生成明文 JSON 文件：
+  ```shell
+  java -jar wps-profile-cipher.jar -c product.dat -p product.json
+  ```
+
+- 加密文本：
+  ```shell
+  java -jar wps-profile-cipher.jar -t "true" -e
+  ```
+
+  程序输出：
+  ```text
+  WHfH10HHgeQrW2N48LfXrA..
+  ```
+
+- 解密文本：
+  ```shell
+  java -jar wps-profile-cipher.jar -t "NsbhfV4nLv_oZGENyLSVZA.."
+  ```
+  
+  程序输出：
+  ```text
+  false
+  ```
 
 ## 开源许可
 
