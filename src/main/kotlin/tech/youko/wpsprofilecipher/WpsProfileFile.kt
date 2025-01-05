@@ -78,7 +78,7 @@ class WpsProfileFile(private val cipher: WpsCipher) {
                                 subJson[key] = value.fold(JSONArray()) { array, it ->
                                     check(it is String) { "List value must be a string." }
                                     array.apply {
-                                        array.add(it)
+                                        add(it)
                                     }
                                 }
                             } else {
