@@ -4,7 +4,7 @@
 
 ## 使用方式
 
-> 本程序可以配合 [WPSHashPatch](https://github.com/YukiIsait/WPSHashPatch) 使用以实现更方便的配置文件自定义。
+> 本工具可以配合 [WPSHashPatch](https://github.com/YukiIsait/WPSHashPatch) 使用以实现更方便的配置文件自定义。
 
 ```text
 java -jar wps-profile-cipher.jar <options_list>
