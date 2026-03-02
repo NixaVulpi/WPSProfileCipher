@@ -1,10 +1,10 @@
-﻿# WPS Office 配置文件加解密工具
+﻿# WPS 配置文件加解密工具
 
-本工具旨在实现对 WPS Office 配置文件（oem.ini/product.dat）的加解密。
+本工具旨在实现对 WPS 配置文件（oem.ini/product.dat）的加解密。
 
 ## 使用方式
 
-> 本工具可以配合 [WPSProfileVerificationPatch](https://github.com/YukiIsait/WPSProfileVerificationPatch) 使用以实现更方便的配置文件自定义。
+> 本工具可以配合 [WPSProfileVerificationPatch](https://github.com/NixaVulpi/WPSProfileVerificationPatch) 使用以实现更方便的配置文件自定义。
 
 ```text
 java -jar wps-profile-cipher.jar <options_list>
