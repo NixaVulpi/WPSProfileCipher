@@ -4,8 +4,6 @@
 
 ## 使用方式
 
-> 本工具可以配合 [WPSProfileVerificationPatch](https://github.com/YukiIsait/WPSProfileVerificationPatch) 使用以实现更方便的配置文件自定义。
-
 ```text
 java -jar wps-profile-cipher.jar <options_list>
 ```
@@ -29,6 +27,12 @@ java -jar wps-profile-cipher.jar <options_list>
     - 类型：Boolean
     - 默认值：false
 
+- `--shouldSign, -s`
+    - 从 JSON 生成密文 INI 时追加 OEM AES 签名
+    - 仅能与 `--shouldEncrypt` 一起用于文件转换
+    - 类型：Boolean
+    - 默认值：false
+
 - `--help, -h`
     - 显示帮助信息
 
@@ -37,6 +41,11 @@ java -jar wps-profile-cipher.jar <options_list>
 - 从明文 JSON 文件加密生成密文 INI 文件：
   ```shell
   java -jar wps-profile-cipher.jar -p product.json -c product.dat -e
+  ```
+
+- 从明文 JSON 文件生成带 OEM AES 签名的密文 INI 文件：
+  ```shell
+  java -jar wps-profile-cipher.jar -p oem.json -c oem.ini -e -s
   ```
 
 - 从密文 INI 文件解密生成明文 JSON 文件：
