@@ -1,6 +1,6 @@
-﻿# WPS Office 配置文件加解密工具
+﻿# WPS 配置文件加解密工具
 
-本工具旨在实现对 WPS Office 配置文件（oem.ini/product.dat）的加解密。
+本工具旨在实现对 WPS 配置文件（oem.ini/product.dat）的加解密。
 
 ## 使用方式
 
