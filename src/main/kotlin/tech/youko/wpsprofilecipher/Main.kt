@@ -25,11 +25,11 @@ private fun runCommand(args: Array<String>) {
         shortName = "c",
         description = "Cipher INI file (required if text is not provided)"
     )
-    val plainJsonPath by parser.option(
+    val plainIniPath by parser.option(
         ArgType.String,
-        fullName = "plainJsonFile",
+        fullName = "plainIniFile",
         shortName = "p",
-        description = "Plain JSON file (required if text is not provided)"
+        description = "Plain INI file (required if text is not provided)"
     )
     val text by parser.option(
         ArgType.String,
@@ -46,6 +46,11 @@ private fun runCommand(args: Array<String>) {
         shortName = "s",
         description = "Append an OEM AES signature when creating a cipher INI file"
     ).default(false)
+    val headerComment by parser.option(
+        ArgType.String,
+        shortName = "m",
+        description = "Text after the leading ';', followed by one blank line before the first INI section"
+    )
     val algorithm by parser.option(
         ArgType.String,
         fullName = "algorithm",
@@ -56,7 +61,8 @@ private fun runCommand(args: Array<String>) {
     parser.parse(args)
     val cipher = TextCipher()
     if (text != null) {
-        require(!shouldSign) { "OEM signing is only available for JSON to INI conversion." }
+        require(!shouldSign) { "OEM signing is only available when encrypting a plain INI file." }
+        require(headerComment == null) { "Header comment is only available when encrypting a plain INI file." }
         println(transformText(text!!, algorithm, shouldEncrypt, cipher, FeatureCipher()))
         return
     }
@@ -65,20 +71,27 @@ private fun runCommand(args: Array<String>) {
         "The algorithm option only applies to text mode; file conversion detects the Feature section automatically."
     }
 
-    require(cipherIniPath != null && plainJsonPath != null) {
-        "Cipher INI file and plain JSON file must be provided if text is not provided."
+    require(cipherIniPath != null && plainIniPath != null) {
+        "Cipher INI file and plain INI file must be provided if text is not provided."
     }
     require(!shouldSign || shouldEncrypt) {
-        "OEM signing is only available for JSON to INI conversion."
+        "OEM signing is only available when encrypting a plain INI file."
+    }
+    require(headerComment == null || shouldEncrypt) {
+        "Header comment is only available when encrypting a plain INI file."
     }
 
     ProfileFile(cipher).apply {
         if (shouldEncrypt) {
-            loadPlainJson(File(plainJsonPath!!))
-            storeCipherIni(File(cipherIniPath!!), shouldSign = shouldSign)
+            loadPlainIni(File(plainIniPath!!))
+            storeCipherIni(
+                File(cipherIniPath!!),
+                shouldSign = shouldSign,
+                headerComment = headerComment
+            )
         } else {
             loadCipherIni(File(cipherIniPath!!))
-            storePlainJson(File(plainJsonPath!!))
+            storePlainIni(File(plainIniPath!!))
         }
     }
 }

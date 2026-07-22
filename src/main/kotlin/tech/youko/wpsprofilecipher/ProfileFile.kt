@@ -1,8 +1,5 @@
 package tech.youko.wpsprofilecipher
 
-import com.alibaba.fastjson2.JSON
-import com.alibaba.fastjson2.JSONObject
-import com.alibaba.fastjson2.JSONWriter
 import org.ini4j.Ini
 import java.io.File
 import java.io.StringReader
@@ -17,7 +14,9 @@ class ProfileFile(
     private var data: Map<String, Map<String, String>>? = null
 
     fun loadCipherIni(file: File, charset: Charset = Charsets.UTF_8) {
-        val ini = StringReader(file.readText(charset)).use(::Ini)
+        val ini = createIni().apply {
+            StringReader(file.readText(charset)).use(::load)
+        }
         data = ini.entries.associate { (sectionName, section) ->
             sectionName to if (sectionName.equals(FEATURE_SECTION, ignoreCase = true)) {
                 section.entries.associate { (key, value) ->
@@ -32,36 +31,45 @@ class ProfileFile(
         }
     }
 
-    fun storeCipherIni(file: File, charset: Charset = Charsets.UTF_8, shouldSign: Boolean = false) {
-        val iniBytes = buildCipherIni().toByteArray(charset)
+    fun storeCipherIni(
+        file: File,
+        charset: Charset = Charsets.UTF_8,
+        shouldSign: Boolean = false,
+        headerComment: String? = null
+    ) {
+        require(headerComment?.none { it == '\r' || it == '\n' } != false) {
+            "Header comment cannot contain line breaks."
+        }
+        val iniText = if (headerComment == null) {
+            buildCipherIni()
+        } else {
+            ";$headerComment\r\n\r\n${buildCipherIni()}"
+        }
+        val iniBytes = iniText.toByteArray(charset)
         val output = if (shouldSign) oemSigner.appendSignature(iniBytes) else iniBytes
         file.writeBytes(output)
     }
 
-    fun loadPlainJson(file: File, charset: Charset = Charsets.UTF_8) {
-        val root = file.reader(charset).use(JSON::parseObject)
-        data = root.entries.associate { (sectionName, sectionValue) ->
-            check(sectionValue is Map<*, *>) { "Section data must be an object." }
-            sectionName to sectionValue.entries.associate { (key, value) ->
-                check(key is String) { "Key must be a string." }
-                check(value is String) { "Value must be a string." }
-                key to value
-            }
+    fun loadPlainIni(file: File, charset: Charset = Charsets.UTF_8) {
+        val ini = createIni().apply {
+            StringReader(file.readText(charset)).use(::load)
+        }
+        data = ini.entries.associate { (sectionName, section) ->
+            sectionName to section.entries.associate { (key, value) -> key to value }
         }
     }
 
-    fun storePlainJson(file: File, charset: Charset = Charsets.UTF_8) {
-        val json = requireData().entries.associateTo(JSONObject()) { (sectionName, section) ->
-            sectionName to JSONObject(section)
+    fun storePlainIni(file: File, charset: Charset = Charsets.UTF_8) {
+        val ini = createIni()
+        requireData().forEach { (sectionName, sectionData) ->
+            val section = ini.add(sectionName)
+            sectionData.forEach { (key, value) -> section[key] = value }
         }
-        file.writeText(
-            json.toString(JSONWriter.Feature.PrettyFormat, JSONWriter.Feature.WriteMapNullValue),
-            charset
-        )
+        file.writeText(StringWriter().also(ini::store).toString(), charset)
     }
 
     private fun buildCipherIni(): String {
-        val ini = Ini()
+        val ini = createIni()
         requireData().forEach { (sectionName, sectionData) ->
             val section = ini.add(sectionName)
             sectionData.forEach { (key, value) ->
@@ -74,6 +82,10 @@ class ProfileFile(
             }
         }
         return StringWriter().also(ini::store).toString()
+    }
+
+    private fun createIni(): Ini = Ini().apply {
+        config.isEscape = false
     }
 
     private fun requireData(): Map<String, Map<String, String>> =

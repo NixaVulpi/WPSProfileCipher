@@ -14,12 +14,12 @@ java -jar wps-profile-cipher.jar <options_list>
     - 密文 INI 文件（如果未提供 `text` 则必填）
     - 类型：String
 
-- `--plainJsonFile, -p`
-    - 明文 JSON 文件（如果未提供 `text` 则必填）
+- `--plainIniFile, -p`
+    - 明文 INI 文件（如果未提供 `text` 则必填）
     - 类型：String
 
 - `--text, -t`
-    - 文本（如果提供则 `cipherIniFile` 和 `plainJsonFile` 将被忽略）
+    - 文本（如果提供则两个 INI 文件参数将被忽略）
     - 类型：String
 
 - `--shouldEncrypt, -e`
@@ -28,10 +28,15 @@ java -jar wps-profile-cipher.jar <options_list>
     - 默认值：false
 
 - `--shouldSign, -s`
-    - 从 JSON 生成密文 INI 时追加 OEM AES 签名
+    - 从明文 INI 生成密文 INI 时追加 OEM AES 签名
     - 仅能与 `--shouldEncrypt` 一起用于文件转换
     - 类型：Boolean
     - 默认值：false
+
+- `--headerComment, -m`
+    - 密文 INI 首行 `;` 后的注释内容
+    - 注释后写入一个空行，再开始第一个 INI 段
+    - 生成签名时，该注释和空行也包含在签名覆盖范围内
 
 - `--algorithm, -a`
     - 文本模式使用的算法：`profile`（普通配置 AES）或 `feature`（`[Feature]` IDEA/C64）
@@ -43,19 +48,31 @@ java -jar wps-profile-cipher.jar <options_list>
 
 ## 示例
 
-- 从明文 JSON 文件加密生成密文 INI 文件：
+- 从明文 INI 文件加密生成密文 INI 文件：
   ```shell
-  java -jar wps-profile-cipher.jar -p product.json -c product.dat -e
+  java -jar wps-profile-cipher.jar -p product.plain.ini -c product.dat -e
   ```
 
-- 从明文 JSON 文件生成带 OEM AES 签名的密文 INI 文件：
+- 从明文 INI 文件生成带 OEM AES 签名的密文 INI 文件：
   ```shell
-  java -jar wps-profile-cipher.jar -p oem.json -c oem.ini -e -s
+  java -jar wps-profile-cipher.jar -p oem.plain.ini -c oem.ini -e -s
   ```
 
-- 从密文 INI 文件解密生成明文 JSON 文件：
+- 生成带首行注释和 OEM AES 签名的密文 INI：
   ```shell
-  java -jar wps-profile-cipher.jar -c product.dat -p product.json
+  java -jar wps-profile-cipher.jar -p oem.plain.ini -c oem.ini -e -s --headerComment "WPS OEM configuration"
+  ```
+
+  输出开头：
+  ```ini
+  ;WPS OEM configuration
+
+  [section]
+  ```
+
+- 从密文 INI 文件解密生成明文 INI 文件：
+  ```shell
+  java -jar wps-profile-cipher.jar -c product.dat -p product.plain.ini
   ```
 
 - 加密文本：
@@ -98,14 +115,14 @@ java -jar wps-profile-cipher.jar <options_list>
   16777331=0
   ```
 
-明文 JSON 中的 `[Feature]` 段使用十进制 Feature ID 和整数值：
+明文 INI 的普通配置值保持原样，不需要转义双引号；`[Feature]` 段使用十进制 Feature ID 和整数值：
 
-```json
-{
-  "Feature": {
-    "16777331": "0"
-  }
-}
+```ini
+[default]
+SNOverNumberLimit={"support":false}
+
+[Feature]
+16777331=0
 ```
 
 ## 开源许可
