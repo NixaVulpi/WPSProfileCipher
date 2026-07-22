@@ -33,6 +33,11 @@ java -jar wps-profile-cipher.jar <options_list>
     - 类型：Boolean
     - 默认值：false
 
+- `--algorithm, -a`
+    - 文本模式使用的算法：`profile`（普通配置 AES）或 `feature`（`[Feature]` IDEA/C64）
+    - 默认值：`profile`
+    - 文件转换会自动识别 `[Feature]` 段，不需要指定此参数
+
 - `--help, -h`
     - 显示帮助信息
 
@@ -72,6 +77,36 @@ java -jar wps-profile-cipher.jar <options_list>
   ```text
   false
   ```
+
+- 生成 `[Feature]` 条目：
+  ```shell
+  java -jar wps-profile-cipher.jar -a feature -t "16777331=0" -e
+  ```
+
+  程序输出：
+  ```text
+  5HsDS8UAjZnKSU9I2xbCubqA10=KHsDS8UAjZn4U3A385v-NVsE10
+  ```
+
+- 解密 `[Feature]` 条目：
+  ```shell
+  java -jar wps-profile-cipher.jar -a feature -t "5HsDS8UAjZnKSU9I2xbCubqA10=KHsDS8UAjZn4U3A385v-NVsE10"
+  ```
+
+  程序输出：
+  ```text
+  16777331=0
+  ```
+
+明文 JSON 中的 `[Feature]` 段使用十进制 Feature ID 和整数值：
+
+```json
+{
+  "Feature": {
+    "16777331": "0"
+  }
+}
+```
 
 ## 开源许可
 

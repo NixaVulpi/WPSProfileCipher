@@ -7,7 +7,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class WpsProfileFileTest {
+class ProfileFileTest {
     @Test
     fun `comma-separated cipher values remain a single config string`() {
         val cipherIni = Files.createTempFile("wps-profile", ".ini").toFile()
@@ -19,7 +19,7 @@ class WpsProfileFileTest {
             """.trimIndent()
         )
 
-        WpsProfileFile(WpsCipher()).apply {
+        ProfileFile(TextCipher()).apply {
             loadCipherIni(cipherIni)
             storePlainJson(plainJson)
         }
@@ -34,7 +34,7 @@ class WpsProfileFileTest {
         plainJson.writeText("""{"L10N":{"TX_FIELD_DATE[4]":["M/d/yy","1033"]}}""")
 
         assertFailsWith<IllegalStateException> {
-            WpsProfileFile(WpsCipher()).loadPlainJson(plainJson)
+            ProfileFile(TextCipher()).loadPlainJson(plainJson)
         }
     }
 
@@ -44,7 +44,7 @@ class WpsProfileFileTest {
         val cipherIni = Files.createTempFile("wps-profile", ".ini").toFile()
         plainJson.writeText("""{"setup":{"enabled":"true"}}""")
 
-        WpsProfileFile(WpsCipher()).apply {
+        ProfileFile(TextCipher()).apply {
             loadPlainJson(plainJson)
             storeCipherIni(cipherIni)
         }
@@ -58,7 +58,7 @@ class WpsProfileFileTest {
         val cipherIni = Files.createTempFile("wps-profile", ".ini").toFile()
         plainJson.writeText("""{"setup":{"enabled":"true"}}""")
 
-        WpsProfileFile(WpsCipher()).apply {
+        ProfileFile(TextCipher()).apply {
             loadPlainJson(plainJson)
             storeCipherIni(cipherIni, shouldSign = true)
         }

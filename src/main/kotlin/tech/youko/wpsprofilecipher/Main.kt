@@ -46,13 +46,23 @@ private fun runCommand(args: Array<String>) {
         shortName = "s",
         description = "Append an OEM AES signature when creating a cipher INI file"
     ).default(false)
+    val algorithm by parser.option(
+        ArgType.String,
+        fullName = "algorithm",
+        shortName = "a",
+        description = "Text algorithm: profile (AES, default) or feature (IDEA/C64)"
+    ).default("profile")
 
     parser.parse(args)
     val cipher = TextCipher()
     if (text != null) {
         require(!shouldSign) { "OEM signing is only available for JSON to INI conversion." }
-        println(if (shouldEncrypt) cipher.encrypt(text!!) else cipher.decrypt(text!!))
+        println(transformText(text!!, algorithm, shouldEncrypt, cipher, FeatureCipher()))
         return
+    }
+
+    require(algorithm.equals("profile", ignoreCase = true)) {
+        "The algorithm option only applies to text mode; file conversion detects the Feature section automatically."
     }
 
     require(cipherIniPath != null && plainJsonPath != null) {
@@ -71,6 +81,35 @@ private fun runCommand(args: Array<String>) {
             storePlainJson(File(plainJsonPath!!))
         }
     }
+}
+
+private fun transformText(
+    text: String,
+    algorithm: String,
+    shouldEncrypt: Boolean,
+    cipher: TextCipher,
+    featureCipher: FeatureCipher
+): String = when (algorithm.lowercase()) {
+    "profile" -> if (shouldEncrypt) cipher.encrypt(text) else cipher.decrypt(text)
+    "feature" -> {
+        val (key, value) = splitEntry(text)
+        if (shouldEncrypt) {
+            val (encryptedKey, encryptedValue) = featureCipher.encrypt(key.toInt(), value.toInt())
+            "$encryptedKey=$encryptedValue"
+        } else {
+            val (featureId, featureValue) = featureCipher.decrypt(key, value)
+            "$featureId=$featureValue"
+        }
+    }
+    else -> throw IllegalArgumentException("Algorithm must be 'profile' or 'feature'.")
+}
+
+private fun splitEntry(text: String): Pair<String, String> {
+    val separator = text.indexOf('=')
+    require(separator > 0 && separator < text.lastIndex) {
+        "Feature text must be a key=value pair."
+    }
+    return text.substring(0, separator) to text.substring(separator + 1)
 }
 
 private fun String.ensureTrailingPeriod(): String = if (endsWith('.')) this else "$this."

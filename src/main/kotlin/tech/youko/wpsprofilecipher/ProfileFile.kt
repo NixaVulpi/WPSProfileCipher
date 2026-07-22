@@ -9,14 +9,25 @@ import java.io.StringReader
 import java.io.StringWriter
 import java.nio.charset.Charset
 
-class ProfileFile(private val cipher: TextCipher, private val oemSigner: OemSigner = OemSigner()) {
+class ProfileFile(
+    private val cipher: TextCipher,
+    private val featureCipher: FeatureCipher = FeatureCipher(),
+    private val oemSigner: OemSigner = OemSigner()
+) {
     private var data: Map<String, Map<String, String>>? = null
 
     fun loadCipherIni(file: File, charset: Charset = Charsets.UTF_8) {
         val ini = StringReader(file.readText(charset)).use(::Ini)
         data = ini.entries.associate { (sectionName, section) ->
-            sectionName to section.entries.associate { (key, value) ->
-                cipher.decrypt(key) to transformCommaSeparated(value, cipher::decrypt)
+            sectionName to if (sectionName.equals(FEATURE_SECTION, ignoreCase = true)) {
+                section.entries.associate { (key, value) ->
+                    val (featureId, featureValue) = featureCipher.decrypt(key, value)
+                    featureId.toString() to featureValue.toString()
+                }
+            } else {
+                section.entries.associate { (key, value) ->
+                    cipher.decrypt(key) to transformCommaSeparated(value, cipher::decrypt)
+                }
             }
         }
     }
@@ -54,7 +65,12 @@ class ProfileFile(private val cipher: TextCipher, private val oemSigner: OemSign
         requireData().forEach { (sectionName, sectionData) ->
             val section = ini.add(sectionName)
             sectionData.forEach { (key, value) ->
-                section[cipher.encrypt(key)] = transformCommaSeparated(value, cipher::encrypt)
+                if (sectionName.equals(FEATURE_SECTION, ignoreCase = true)) {
+                    val (encryptedKey, encryptedValue) = featureCipher.encrypt(key.toInt(), value.toInt())
+                    section[encryptedKey] = encryptedValue
+                } else {
+                    section[cipher.encrypt(key)] = transformCommaSeparated(value, cipher::encrypt)
+                }
             }
         }
         return StringWriter().also(ini::store).toString()
@@ -65,4 +81,8 @@ class ProfileFile(private val cipher: TextCipher, private val oemSigner: OemSign
 
     private fun transformCommaSeparated(value: String, transform: (String) -> String): String =
         value.splitToSequence(',').joinToString(", ") { part -> transform(part.trim()) }
+
+    companion object {
+        private const val FEATURE_SECTION = "Feature"
+    }
 }
