@@ -1,120 +1,154 @@
-﻿# WPS 配置文件加解密工具
+# WPS Profile Cipher
 
-本工具旨在实现对 WPS 配置文件（oem.ini/product.dat）的加解密。
+跨平台的 WPS 配置文件加密、解密与 OEM 签名工具。项目使用 C++20、CMake、Ninja 和 vcpkg，基于 Crypto++、CLI11、SimpleIni 和 Catch2 构建。
 
-## 使用方式
+## 功能
+
+- 加密或解密普通配置字段：AES-256/ECB/PKCS#7 与 WPS Base64 变体。
+- 自动处理 `[Feature]` 节：IDEA、WPS C64 编码和兼容性校验帧。
+- 为加密后的 OEM INI 追加 `OemSignType1` 签名。
+- 在 Windows x86/x64/arm64、Linux x64/arm64 和 macOS x64/arm64 构建。
+- 默认使用平台原生换行，也可显式指定 CRLF 或 LF。
+
+> 这些算法和固定密钥用于兼容已有 WPS 文件格式，不适合保护新的敏感数据。
+
+## 命令行
+
+程序使用子命令区分操作：
 
 ```text
-java -jar wps-profile-cipher.jar <options_list>
+wps-profile-cipher encrypt-text [--codec profile|feature] <text>
+wps-profile-cipher decrypt-text [--codec profile|feature] <text>
+wps-profile-cipher encrypt-file [--sign] [--header-comment <text>]
+                                [--line-ending native|crlf|lf] <input> <output>
+wps-profile-cipher decrypt-file [--line-ending native|crlf|lf] <input> <output>
 ```
 
-### 选项列表
+普通文本加密与解密：
 
-- `--cipherIniFile, -c`
-    - 密文 INI 文件（如果未提供 `text` 则必填）
-    - 类型：String
+```powershell
+wps-profile-cipher encrypt-text "true"
+wps-profile-cipher decrypt-text "NsbhfV4nLv_oZGENyLSVZA.."
+```
 
-- `--plainIniFile, -p`
-    - 明文 INI 文件（如果未提供 `text` 则必填）
-    - 类型：String
+`[Feature]` 条目加密与解密：
 
-- `--text, -t`
-    - 文本（如果提供则两个 INI 文件参数将被忽略）
-    - 类型：String
+```powershell
+wps-profile-cipher encrypt-text --codec feature "16777331=0"
+wps-profile-cipher decrypt-text --codec feature `
+  "5HsDS8UAjZnKSU9I2xbCubqA10=KHsDS8UAjZn4U3A385v-NVsE10"
+```
 
-- `--shouldEncrypt, -e`
-    - 是否加密内容（否则为解密）
-    - 类型：Boolean
-    - 默认值：false
+配置文件转换：
 
-- `--shouldSign, -s`
-    - 从明文 INI 生成密文 INI 时追加 OEM AES 签名
-    - 仅能与 `--shouldEncrypt` 一起用于文件转换
-    - 类型：Boolean
-    - 默认值：false
+```powershell
+wps-profile-cipher encrypt-file product.plain.ini product.dat
+wps-profile-cipher decrypt-file product.dat product.plain.ini
+```
 
-- `--headerComment, -m`
-    - 密文 INI 首行 `;` 后的注释内容
-    - 注释后写入一个空行，再开始第一个 INI 段
-    - 生成签名时，该注释和空行也包含在签名覆盖范围内
+默认的 `native` 在 Windows 写 CRLF，在 Linux/macOS 写 LF。需要跨平台固定字节布局时可以指定：
 
-- `--algorithm, -a`
-    - 文本模式使用的算法：`profile`（普通配置 AES）或 `feature`（`[Feature]` IDEA/C64）
-    - 默认值：`profile`
-    - 文件转换会自动识别 `[Feature]` 段，不需要指定此参数
+```powershell
+wps-profile-cipher encrypt-file --line-ending crlf product.plain.ini product.dat
+wps-profile-cipher decrypt-file --line-ending lf product.dat product.plain.ini
+```
 
-- `--help, -h`
-    - 显示帮助信息
+生成带头注释和 OEM 签名的配置：
 
-## 示例
+```powershell
+wps-profile-cipher encrypt-file --sign `
+  --header-comment "WPS OEM configuration" `
+  --line-ending crlf `
+  oem.plain.ini oem.ini
+```
 
-- 从明文 INI 文件加密生成密文 INI 文件：
-  ```shell
-  java -jar wps-profile-cipher.jar -p product.plain.ini -c product.dat -e
-  ```
+文件转换会按节名自动选择编码器；`[Feature]` 不需要额外参数。普通节的逗号分隔值会逐项转换。
 
-- 从明文 INI 文件生成带 OEM AES 签名的密文 INI 文件：
-  ```shell
-  java -jar wps-profile-cipher.jar -p oem.plain.ini -c oem.ini -e -s
-  ```
+## Windows 构建
 
-- 生成带首行注释和 OEM AES 签名的密文 INI：
-  ```shell
-  java -jar wps-profile-cipher.jar -p oem.plain.ini -c oem.ini -e -s --headerComment "WPS OEM configuration"
-  ```
+需要安装包含“使用 C++ 的桌面开发”工作负载的 Visual Studio，以及 CMake、Ninja 和
+vcpkg。`VCPKG_ROOT` 必须指向 vcpkg 仓库根目录。
 
-  输出开头：
-  ```ini
-  ;WPS OEM configuration
+从开始菜单打开 **Developer PowerShell for Visual Studio**，x64 构建使用其默认的
+MSVC x64 工具链：
 
-  [section]
-  ```
+```powershell
+$env:VCPKG_ROOT = "D:\path\to\vcpkg"
 
-- 从密文 INI 文件解密生成明文 INI 文件：
-  ```shell
-  java -jar wps-profile-cipher.jar -c product.dat -p product.plain.ini
-  ```
+cmake --preset windows-x64-mt-release
+cmake --build --preset windows-x64-mt-release --parallel
+ctest --preset windows-x64-mt-release
+```
 
-- 加密文本：
-  ```shell
-  java -jar wps-profile-cipher.jar -t "true" -e
-  ```
+Windows 下项目和 vcpkg 库均静态链接，同时提供静态与动态 MSVC CRT 版本：
 
-  程序输出：
-  ```text
-  WHfH10HHgeQrW2N48LfXrA..
-  ```
+- `/MT`：`windows-x64-mt-release`、`windows-x86-mt-release`、`windows-arm64-mt-release`
+- `/MD`：`windows-x64-md-release`、`windows-x86-md-release`、`windows-arm64-md-release`
+- Debug：`windows-x64-mt-debug` 使用 `/MTd`，`windows-x64-md-debug` 使用 `/MDd`
 
-- 解密文本：
-  ```shell
-  java -jar wps-profile-cipher.jar -t "NsbhfV4nLv_oZGENyLSVZA.."
-  ```
-  
-  程序输出：
-  ```text
-  false
-  ```
+例如构建 x64 `/MD` 版本：
 
-- 生成 `[Feature]` 条目：
-  ```shell
-  java -jar wps-profile-cipher.jar -a feature -t "16777331=0" -e
-  ```
+```powershell
+cmake --preset windows-x64-md-release
+cmake --build --preset windows-x64-md-release --parallel
+ctest --preset windows-x64-md-release
+```
 
-  程序输出：
-  ```text
-  5HsDS8UAjZnKSU9I2xbCubqA10=KHsDS8UAjZn4U3A385v-NVsE10
-  ```
+交叉编译时，从 Visual Studio 开始菜单打开与目标匹配的工具命令行：
 
-- 解密 `[Feature]` 条目：
-  ```shell
-  java -jar wps-profile-cipher.jar -a feature -t "5HsDS8UAjZnKSU9I2xbCubqA10=KHsDS8UAjZn4U3A385v-NVsE10"
-  ```
+- x86：**x64_x86 Cross Tools Command Prompt for Visual Studio**
+- arm64：**x64_arm64 Cross Tools Command Prompt for Visual Studio**
 
-  程序输出：
-  ```text
-  16777331=0
-  ```
+在对应终端设置 `VCPKG_ROOT` 后运行相应 preset。以下示例构建 x86 `/MD` 版本：
 
-## 开源许可
+```text
+cmake --preset windows-x86-md-release
+cmake --build --preset windows-x86-md-release --parallel
+ctest --preset windows-x86-md-release
+```
 
-本项目根据 MIT 许可证授权，详见 [LICENSE](LICENSE.md) 文件。
+arm64 的 `/MT` 与 `/MD` preset 分别为：
+
+```text
+cmake --preset windows-arm64-mt-release
+cmake --build --preset windows-arm64-mt-release --parallel
+
+cmake --preset windows-arm64-md-release
+cmake --build --preset windows-arm64-md-release --parallel
+```
+
+arm64 测试需要在 arm64 Windows 主机或对应的 GitHub Actions runner 上执行。
+
+Windows 发布包以 `-mt` 或 `-md` 后缀区分 CRT 类型。仓库内的 VSCode 配置包含 Windows x86/x64/arm64 的 `/MT` 与 `/MD` 版本，以及 Linux x64/arm64 和 macOS x64/arm64。先在 CMake Tools 中选择并配置当前平台的 Release preset，再通过 “C/C++: Select a Configuration” 选择同名配置；对应的 `compile_commands.json` 会用于 IntelliSense。若编辑器仍保留旧诊断，执行 “C/C++: Reset IntelliSense Database”。
+
+## Linux 与 macOS 构建
+
+```bash
+export VCPKG_ROOT=/path/to/vcpkg
+preset=linux-x64-release  # 改为当前平台和架构对应的 preset
+
+cmake --preset "$preset"
+cmake --build --preset "$preset" --parallel
+ctest --preset "$preset"
+```
+
+其他可选值为 `linux-arm64-release`、`macos-x64-release` 和 `macos-arm64-release`。
+
+Crypto++ 在所有目标上静态链接；Linux 的系统 C 运行库和 macOS 的系统库仍由操作系统动态提供。
+
+## 项目结构
+
+```text
+include/wps_profile_cipher/  公共 C++ API
+src/crypto/                  密码原语适配与 WPS 格式编解码
+src/profile/                 INI 文档模型与文件转换
+src/cli/                     命令行入口
+tests/                       兼容性向量和功能测试
+cmake/triplets/              跨架构 vcpkg triplet
+```
+
+Crypto++ 提供 AES、IDEA、MD5 和安全随机数，CLI11 负责命令行解析，SimpleIni 负责INI 读写，Catch2 负责测试发现和断言。WPS 私有的 C64 位序、Feature 帧尾、位交换、逗号分项转换和 OEM 签名布局属于文件协议，保留在独立的格式层中。
+
+## 许可证
+
+项目使用 [MIT License](LICENSE.md)。第三方依赖遵循各自许可证。

@@ -162,7 +162,7 @@ def write_outputs(rows: list[Descriptor]) -> tuple[str, str]:
     with open(json_path, "w", encoding="utf-8") as handle:
         json.dump(payload, handle, ensure_ascii=False, indent=2)
 
-    with open(csv_path, "w", newline="", encoding="utf-8-sig") as handle:
+    with open(csv_path, "w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
             fieldnames=[

@@ -1,0 +1,8 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(cryptopp CONFIG REQUIRED COMPONENTS static)
+find_dependency(SimpleIni CONFIG REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/wps_profile_cipher_targets.cmake")
+check_required_components(wps_profile_cipher)

@@ -1,0 +1,145 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "Windows x86 (/MT)",
+      "configurationProvider": "ms-vscode.cmake-tools",
+      "compileCommands": "${workspaceFolder}/build/windows-x86-mt-release/compile_commands.json",
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/build/windows-x86-mt-release/vcpkg_installed/x86-windows-static-mt/include"
+      ],
+      "defines": [
+        "CRYPTOPP_ENABLE_NAMESPACE_WEAK=1"
+      ],
+      "cppStandard": "c++20",
+      "intelliSenseMode": "windows-msvc-x86"
+    },
+    {
+      "name": "Windows x64 (/MT)",
+      "configurationProvider": "ms-vscode.cmake-tools",
+      "compileCommands": "${workspaceFolder}/build/windows-x64-mt-release/compile_commands.json",
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/build/windows-x64-mt-release/vcpkg_installed/x64-windows-static-mt/include"
+      ],
+      "defines": [
+        "CRYPTOPP_ENABLE_NAMESPACE_WEAK=1"
+      ],
+      "cppStandard": "c++20",
+      "intelliSenseMode": "windows-msvc-x64"
+    },
+    {
+      "name": "Windows arm64 (/MT)",
+      "configurationProvider": "ms-vscode.cmake-tools",
+      "compileCommands": "${workspaceFolder}/build/windows-arm64-mt-release/compile_commands.json",
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/build/windows-arm64-mt-release/vcpkg_installed/arm64-windows-static-mt/include"
+      ],
+      "defines": [
+        "CRYPTOPP_ENABLE_NAMESPACE_WEAK=1"
+      ],
+      "cppStandard": "c++20",
+      "intelliSenseMode": "windows-msvc-arm64"
+    },
+    {
+      "name": "Windows x86 (/MD)",
+      "configurationProvider": "ms-vscode.cmake-tools",
+      "compileCommands": "${workspaceFolder}/build/windows-x86-md-release/compile_commands.json",
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/build/windows-x86-md-release/vcpkg_installed/x86-windows-static-md/include"
+      ],
+      "defines": [
+        "CRYPTOPP_ENABLE_NAMESPACE_WEAK=1"
+      ],
+      "cppStandard": "c++20",
+      "intelliSenseMode": "windows-msvc-x86"
+    },
+    {
+      "name": "Windows x64 (/MD)",
+      "configurationProvider": "ms-vscode.cmake-tools",
+      "compileCommands": "${workspaceFolder}/build/windows-x64-md-release/compile_commands.json",
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/build/windows-x64-md-release/vcpkg_installed/x64-windows-static-md/include"
+      ],
+      "defines": [
+        "CRYPTOPP_ENABLE_NAMESPACE_WEAK=1"
+      ],
+      "cppStandard": "c++20",
+      "intelliSenseMode": "windows-msvc-x64"
+    },
+    {
+      "name": "Windows arm64 (/MD)",
+      "configurationProvider": "ms-vscode.cmake-tools",
+      "compileCommands": "${workspaceFolder}/build/windows-arm64-md-release/compile_commands.json",
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/build/windows-arm64-md-release/vcpkg_installed/arm64-windows-static-md/include"
+      ],
+      "defines": [
+        "CRYPTOPP_ENABLE_NAMESPACE_WEAK=1"
+      ],
+      "cppStandard": "c++20",
+      "intelliSenseMode": "windows-msvc-arm64"
+    },
+    {
+      "name": "Linux x64",
+      "configurationProvider": "ms-vscode.cmake-tools",
+      "compileCommands": "${workspaceFolder}/build/linux-x64-release/compile_commands.json",
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/build/linux-x64-release/vcpkg_installed/x64-linux/include"
+      ],
+      "defines": [
+        "CRYPTOPP_ENABLE_NAMESPACE_WEAK=1"
+      ],
+      "cppStandard": "c++20",
+      "intelliSenseMode": "linux-gcc-x64"
+    },
+    {
+      "name": "Linux arm64",
+      "configurationProvider": "ms-vscode.cmake-tools",
+      "compileCommands": "${workspaceFolder}/build/linux-arm64-release/compile_commands.json",
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/build/linux-arm64-release/vcpkg_installed/arm64-linux/include"
+      ],
+      "defines": [
+        "CRYPTOPP_ENABLE_NAMESPACE_WEAK=1"
+      ],
+      "cppStandard": "c++20",
+      "intelliSenseMode": "linux-gcc-arm64"
+    },
+    {
+      "name": "macOS x64",
+      "configurationProvider": "ms-vscode.cmake-tools",
+      "compileCommands": "${workspaceFolder}/build/macos-x64-release/compile_commands.json",
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/build/macos-x64-release/vcpkg_installed/x64-osx-static/include"
+      ],
+      "defines": [
+        "CRYPTOPP_ENABLE_NAMESPACE_WEAK=1"
+      ],
+      "cppStandard": "c++20",
+      "intelliSenseMode": "macos-clang-x64"
+    },
+    {
+      "name": "macOS arm64",
+      "configurationProvider": "ms-vscode.cmake-tools",
+      "compileCommands": "${workspaceFolder}/build/macos-arm64-release/compile_commands.json",
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/build/macos-arm64-release/vcpkg_installed/arm64-osx-static/include"
+      ],
+      "defines": [
+        "CRYPTOPP_ENABLE_NAMESPACE_WEAK=1"
+      ],
+      "cppStandard": "c++20",
+      "intelliSenseMode": "macos-clang-arm64"
+    }
+  ]
+}

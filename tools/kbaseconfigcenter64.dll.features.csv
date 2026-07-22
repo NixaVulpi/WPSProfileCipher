@@ -1,4 +1,4 @@
-﻿address,group,name,fields_address,fields_count,fields
+address,group,name,fields_address,fields_count,fields
 0x1801898A0,default,2019gov,0x180189868,1,support:bool
 0x18016A9B0,default,2020AlphaProductName,0x18016A968,1,value:string
 0x180132270,default,2020UnBoxVideo,0x180132258,1,support:bool

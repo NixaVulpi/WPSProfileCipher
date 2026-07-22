@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "wps-profile-cipher",
+  "version-semver": "2.0.0",
+  "description": "Cross-platform WPS profile encryption, decryption, and OEM signing tool",
+  "license": "MIT",
+  "builtin-baseline": "cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3",
+  "dependencies": [
+    "catch2",
+    "cli11",
+    "cryptopp",
+    "simpleini"
+  ]
+}

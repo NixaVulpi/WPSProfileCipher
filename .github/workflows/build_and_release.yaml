@@ -1,32 +1,210 @@
-name: Build And Release
+name: Build and release
 
 on:
   push:
-    tags:
-      - "v*.*.*"
+    branches: [main]
+    tags: ["v*.*.*"]
+  pull_request:
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  VCPKG_COMMIT: cd61e1e26a038e82d6550a3ebbe0fbbfe7da78e3
 
 jobs:
-  build_and_release:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  build:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            name: windows-x86-mt
+            platform: windows
+            architecture: x86
+            triplet: x86-windows-static-mt
+            msvc_architecture: x86
+            static_msvc_runtime: "ON"
+            package_name: wps-profile-cipher-windows-x86-mt
+            package_extension: zip
+          - runner: windows-2025
+            name: windows-x86-md
+            platform: windows
+            architecture: x86
+            triplet: x86-windows-static-md
+            msvc_architecture: x86
+            static_msvc_runtime: "OFF"
+            package_name: wps-profile-cipher-windows-x86-md
+            package_extension: zip
+          - runner: windows-2025
+            name: windows-x64-mt
+            platform: windows
+            architecture: x64
+            triplet: x64-windows-static-mt
+            msvc_architecture: x64
+            static_msvc_runtime: "ON"
+            package_name: wps-profile-cipher-windows-x64-mt
+            package_extension: zip
+          - runner: windows-2025
+            name: windows-x64-md
+            platform: windows
+            architecture: x64
+            triplet: x64-windows-static-md
+            msvc_architecture: x64
+            static_msvc_runtime: "OFF"
+            package_name: wps-profile-cipher-windows-x64-md
+            package_extension: zip
+          - runner: windows-11-arm
+            name: windows-arm64-mt
+            platform: windows
+            architecture: arm64
+            triplet: arm64-windows-static-mt
+            msvc_architecture: arm64
+            static_msvc_runtime: "ON"
+            package_name: wps-profile-cipher-windows-arm64-mt
+            package_extension: zip
+          - runner: windows-11-arm
+            name: windows-arm64-md
+            platform: windows
+            architecture: arm64
+            triplet: arm64-windows-static-md
+            msvc_architecture: arm64
+            static_msvc_runtime: "OFF"
+            package_name: wps-profile-cipher-windows-arm64-md
+            package_extension: zip
+          - runner: ubuntu-24.04
+            name: linux-x64
+            platform: linux
+            architecture: x64
+            triplet: x64-linux
+            static_msvc_runtime: "ON"
+            package_name: wps-profile-cipher-linux-x64
+            package_extension: tar.gz
+          - runner: ubuntu-24.04-arm
+            name: linux-arm64
+            platform: linux
+            architecture: arm64
+            triplet: arm64-linux
+            static_msvc_runtime: "ON"
+            package_name: wps-profile-cipher-linux-arm64
+            package_extension: tar.gz
+          - runner: macos-15-intel
+            name: macos-x64
+            platform: macos
+            architecture: x64
+            triplet: x64-osx-static
+            static_msvc_runtime: "ON"
+            package_name: wps-profile-cipher-macos-x64
+            package_extension: tar.gz
+          - runner: macos-15
+            name: macos-arm64
+            platform: macos
+            architecture: arm64
+            triplet: arm64-osx-static
+            static_msvc_runtime: "ON"
+            package_name: wps-profile-cipher-macos-arm64
+            package_extension: tar.gz
 
-      - name: Setup JDK
-        uses: actions/setup-java@v4
+    runs-on: ${{ matrix.runner }}
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg-binary-cache
+      PACKAGE_NAME: ${{ matrix.package_name }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Check out vcpkg
+        uses: actions/checkout@v7
         with:
-          java-version: "21"
-          distribution: oracle
-          cache: maven
+          repository: microsoft/vcpkg
+          ref: ${{ env.VCPKG_COMMIT }}
+          path: vcpkg
+
+      - name: Bootstrap vcpkg on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./vcpkg/bootstrap-vcpkg.bat -disableMetrics
+
+      - name: Bootstrap vcpkg on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+      - name: Prepare vcpkg binary cache
+        shell: bash
+        run: cmake -E make_directory "$VCPKG_DEFAULT_BINARY_CACHE"
+
+      - name: Restore vcpkg binary cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: >-
+            vcpkg-${{ runner.os }}-${{ matrix.triplet }}-${{ env.VCPKG_COMMIT }}-${{
+            hashFiles('vcpkg.json', 'cmake/triplets/*.cmake') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-${{ matrix.triplet }}-${{ env.VCPKG_COMMIT }}-
+
+      - name: Initialize MSVC environment
+        if: runner.os == 'Windows'
+        uses: TheMrMilchmann/setup-msvc-dev@v4
+        with:
+          arch: ${{ matrix.msvc_architecture }}
+
+      - name: Configure
+        shell: bash
+        run: >-
+          cmake -S . -B build/ci -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          -DVCPKG_OVERLAY_TRIPLETS="$GITHUB_WORKSPACE/cmake/triplets"
+          -DVCPKG_TARGET_TRIPLET="${{ matrix.triplet }}"
+          -DWPS_PROFILE_CIPHER_STATIC_MSVC_RUNTIME=${{ matrix.static_msvc_runtime }}
+          -DWPS_PROFILE_CIPHER_WARNINGS_AS_ERRORS=ON
+          -DCPACK_PACKAGE_FILE_NAME="$PACKAGE_NAME"
 
       - name: Build
-        run: mvn -B package
+        run: cmake --build build/ci --parallel
 
-      - name: Release
-        uses: softprops/action-gh-release@v2
+      - name: Test
+        run: ctest --test-dir build/ci --output-on-failure
+
+      - name: Package
+        run: cmake --build build/ci --target package
+
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.PACKAGE_NAME }}
+          path: |
+            build/ci/${{ env.PACKAGE_NAME }}.${{ matrix.package_extension }}
+            build/ci/${{ env.PACKAGE_NAME }}.${{ matrix.package_extension }}.sha256
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download packages
+        uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v3
         with:
           fail_on_unmatched_files: true
-          files: target/*.jar
+          generate_release_notes: true
+          files: dist/*
