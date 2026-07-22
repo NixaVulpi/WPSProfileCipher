@@ -115,16 +115,6 @@ java -jar wps-profile-cipher.jar <options_list>
   16777331=0
   ```
 
-明文 INI 的普通配置值保持原样，不需要转义双引号；`[Feature]` 段使用十进制 Feature ID 和整数值：
-
-```ini
-[default]
-SNOverNumberLimit={"support":false}
-
-[Feature]
-16777331=0
-```
-
 ## 开源许可
 
 本项目根据 MIT 许可证授权，详见 [LICENSE](LICENSE.md) 文件。
