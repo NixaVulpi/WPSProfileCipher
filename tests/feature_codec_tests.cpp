@@ -33,24 +33,20 @@ TEST_CASE("Feature entries match known WPS ciphertext", "[feature]")
     const auto encoded = codec.encrypt_entry(16777331, 0);
     REQUIRE(encoded.first == encoded_key);
     REQUIRE(encoded.second == encoded_value);
-    REQUIRE(codec.decrypt_entry(encoded_key, encoded_value) ==
-            (wps::profile::FeatureCodec::DecodedEntry { 16777331, 0 }));
+    REQUIRE(codec.decrypt_entry(encoded_key, encoded_value) == (wps::profile::FeatureCodec::DecodedEntry { 16777331, 0 }));
 }
 
 TEST_CASE("Feature entries preserve integer and block boundaries", "[feature]")
 {
     const wps::profile::FeatureCodec codec;
-    for (const auto value : { std::numeric_limits<std::int32_t>::min(), -1, 0, 1,
-                              std::numeric_limits<std::int32_t>::max() })
+    for (const auto value : { std::numeric_limits<std::int32_t>::min(), -1, 0, 1, std::numeric_limits<std::int32_t>::max() })
     {
         INFO("integer value: " << value);
         const auto encoded = codec.encrypt_entry(value, value);
-        REQUIRE(codec.decrypt_entry(encoded.first, encoded.second) ==
-                (wps::profile::FeatureCodec::DecodedEntry { value, value }));
+        REQUIRE(codec.decrypt_entry(encoded.first, encoded.second) == (wps::profile::FeatureCodec::DecodedEntry { value, value }));
     }
 
-    for (const std::string_view value :
-         { "", "a", "1234567", "12345678", "123456789", "1234567890123456" })
+    for (const std::string_view value : { "", "a", "1234567", "12345678", "123456789", "1234567890123456" })
     {
         INFO("text length: " << value.size());
         REQUIRE(codec.decode_text(codec.encode_text(value)) == value);

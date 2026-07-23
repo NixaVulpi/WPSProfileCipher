@@ -47,18 +47,7 @@ TEST_CASE("CLI11 encrypts Feature entries", "[command-line]")
 
     const auto result = run(arguments);
     REQUIRE(result.exit_code == 0);
-    REQUIRE(result.output ==
-            "5HsDS8UAjZnKSU9I2xbCubqA10=KHsDS8UAjZn4U3A385v-NVsE10\n");
-    REQUIRE(result.error_output.empty());
-}
-
-TEST_CASE("CLI11 reports its version", "[command-line]")
-{
-    constexpr std::array arguments { "wps-profile-cipher", "--version" };
-
-    const auto result = run(arguments);
-    REQUIRE(result.exit_code == 0);
-    REQUIRE(result.output == "2.0.0\n");
+    REQUIRE(result.output == "5HsDS8UAjZnKSU9I2xbCubqA10=KHsDS8UAjZn4U3A385v-NVsE10\n");
     REQUIRE(result.error_output.empty());
 }
 

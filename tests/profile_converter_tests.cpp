@@ -71,8 +71,7 @@ TEST_CASE("Profile conversion routes Feature entries and signs selected bytes",
     REQUIRE(contains(encrypted, "\r\n\r\n;OemSignType1="));
     REQUIRE(contains(encrypted, "5HsDS8UAjZnKSU9I2xbCubqA10"));
 
-    const auto encrypted_lf =
-        converter.encrypt_document(plain, { .append_oem_signature = true,
+    const auto encrypted_lf = converter.encrypt_document(plain, { .append_oem_signature = true,
                                             .header_comment = "WPS OEM configuration",
                                             .line_ending = wps::profile::LineEnding::lf });
     REQUIRE(encrypted_lf.starts_with(";WPS OEM configuration\n\n[Setup]"));
@@ -84,8 +83,7 @@ TEST_CASE("Profile conversion routes Feature entries and signs selected bytes",
     REQUIRE(contains(decrypted, "16777331 = 0\n"));
     REQUIRE_FALSE(contains_carriage_return(decrypted));
 
-    REQUIRE_THROWS(
-        converter.encrypt_document(plain, { .append_oem_signature = false,
+    REQUIRE_THROWS(converter.encrypt_document(plain, { .append_oem_signature = false,
                                             .header_comment = "first\nsecond",
                                             .line_ending = wps::profile::LineEnding::native }));
 }
@@ -102,8 +100,7 @@ TEST_CASE("Known L10N profile decrypts", "[profile-converter]")
 
 TEST_CASE("Profile files round trip through the filesystem", "[profile-converter][file]")
 {
-    const auto unique_suffix =
-        std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+    const auto unique_suffix = std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
     const auto directory = std::filesystem::temp_directory_path();
     const auto plain_path = directory / ("wps-profile-plain-" + unique_suffix + ".ini");
     const auto cipher_path = directory / ("wps-profile-cipher-" + unique_suffix + ".ini");
@@ -123,8 +120,7 @@ TEST_CASE("Profile files round trip through the filesystem", "[profile-converter
     converter.decrypt_file(cipher_path, result_path, wps::profile::LineEnding::lf);
 
     std::ifstream result_file(result_path, std::ios::binary);
-    const std::string result { std::istreambuf_iterator<char> { result_file },
-                               std::istreambuf_iterator<char> {} };
+    const std::string result { std::istreambuf_iterator<char> { result_file }, std::istreambuf_iterator<char> {} };
     REQUIRE(contains(result, "enabled = true\n"));
     REQUIRE_FALSE(contains_carriage_return(result));
 
