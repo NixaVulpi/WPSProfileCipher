@@ -31,7 +31,7 @@ namespace
 
 TEST_CASE("OEM signatures match a fixed-IV known answer", "[oem-signature]")
 {
-    const auto content = bytes("[Setup]\r\nkey=value");
+    const auto content = bytes("[Setup]\r\nkey=value\r\n\r\n");
     wps::profile::OemSignature::InitializationVector initialization_vector {};
     for (std::size_t index = 0; index < initialization_vector.size(); ++index)
     {
@@ -46,4 +46,13 @@ TEST_CASE("OEM signatures match a fixed-IV known answer", "[oem-signature]")
         "8FEEA16A55154A6A9C2DCBCFC0427A5A5A514E5D9321A3CA6FF93E15F715C68E"
         "47E3D8767C726EA63928F5513D092A68";
     REQUIRE(ascii(signed_content) == expected);
+}
+
+TEST_CASE("OEM signatures do not add line endings", "[oem-signature]")
+{
+    const auto content = bytes("[Setup]\r\nkey=value");
+    const wps::profile::OemSignature::InitializationVector initialization_vector {};
+
+    const auto signed_content = wps::profile::OemSignature {}.append(content, initialization_vector);
+    REQUIRE(ascii(signed_content).starts_with("[Setup]\r\nkey=value;OemSignType1="));
 }

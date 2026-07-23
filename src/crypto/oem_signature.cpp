@@ -21,7 +21,6 @@ namespace
 constexpr std::string_view signature_header = ";OemSignType1=";
 constexpr std::string_view iv_mask = "S3kP06v2Ne04lDeX";
 constexpr std::string_view aes_key = "F9AF610AE6164C73B78B0A99D8B72890";
-constexpr std::array<std::uint8_t, 2> crlf { '\r', '\n' };
 
 [[nodiscard]] const CryptoPP::byte* as_crypto_bytes(const std::uint8_t* data) noexcept
 {
@@ -44,38 +43,12 @@ void append_ascii(ByteBuffer& target, const std::string_view text)
                            { return static_cast<std::uint8_t>(character); });
 }
 
-void ensure_trailing_blank_line(ByteBuffer& output)
-{
-    const bool uses_crlf = output.size() >= 2 && output[output.size() - 2] == '\r' && output.back() == '\n';
-    const auto single_byte_line_ending =
-        !uses_crlf && !output.empty() && (output.back() == '\r' || output.back() == '\n')
-            ? output.back()
-            : std::uint8_t {};
-
-    while (!output.empty() && (output.back() == '\r' || output.back() == '\n'))
-    {
-        output.pop_back();
-    }
-
-    if (uses_crlf || single_byte_line_ending == 0)
-    {
-        output.insert(output.end(), crlf.begin(), crlf.end());
-        output.insert(output.end(), crlf.begin(), crlf.end());
-    }
-    else
-    {
-        output.push_back(single_byte_line_ending);
-        output.push_back(single_byte_line_ending);
-    }
-}
-
 [[nodiscard]] std::array<std::uint8_t, CryptoPP::Weak::MD5::DIGESTSIZE>
 md5(const std::span<const std::uint8_t> bytes)
 {
     std::array<std::uint8_t, CryptoPP::Weak::MD5::DIGESTSIZE> digest {};
     CryptoPP::Weak::MD5 hash;
-    hash.CalculateDigest(as_crypto_bytes(digest.data()), as_crypto_bytes(bytes.data()),
-                         bytes.size());
+    hash.CalculateDigest(as_crypto_bytes(digest.data()), as_crypto_bytes(bytes.data()), bytes.size());
     return digest;
 }
 
@@ -98,15 +71,13 @@ ByteBuffer OemSignature::append(const std::span<const std::uint8_t> content) con
 {
     InitializationVector initialization_vector {};
     CryptoPP::AutoSeededRandomPool random;
-    random.GenerateBlock(as_crypto_bytes(initialization_vector.data()),
-                         initialization_vector.size());
+    random.GenerateBlock(as_crypto_bytes(initialization_vector.data()), initialization_vector.size());
     return append(content, initialization_vector);
 }
 
 ByteBuffer OemSignature::append(const std::span<const std::uint8_t> content, const InitializationVector& initialization_vector) const
 {
     ByteBuffer output { content.begin(), content.end() };
-    ensure_trailing_blank_line(output);
     append_ascii(output, signature_header);
 
     const auto digest = md5(output);

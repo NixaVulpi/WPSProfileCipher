@@ -158,15 +158,13 @@ void swap_obfuscation_bits(std::span<std::uint8_t> payload)
 
 } // namespace
 
-FeatureCodec::EncodedEntry FeatureCodec::encrypt_entry(const std::int32_t feature_id,
-                                                       const std::int32_t value) const
+FeatureCodec::EncodedEntry FeatureCodec::encrypt_entry(const std::int32_t feature_id, const std::int32_t value) const
 {
     const auto id = std::to_string(feature_id);
     return { encode_text(id), encode_text(id + ':' + std::to_string(value)) };
 }
 
-FeatureCodec::DecodedEntry FeatureCodec::decrypt_entry(const std::string_view encoded_key,
-                                                       const std::string_view encoded_value) const
+FeatureCodec::DecodedEntry FeatureCodec::decrypt_entry(const std::string_view encoded_key, const std::string_view encoded_value) const
 {
     const auto feature_id_text = decode_text(encoded_key);
     const auto feature_id = parse_integer(feature_id_text, "Feature ID");

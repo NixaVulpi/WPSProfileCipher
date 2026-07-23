@@ -68,7 +68,7 @@ TEST_CASE("Profile conversion routes Feature entries and signs selected bytes",
                                             .line_ending = wps::profile::LineEnding::crlf });
 
     REQUIRE(encrypted.starts_with(";WPS OEM configuration\r\n\r\n[Setup]"));
-    REQUIRE(contains(encrypted, ";OemSignType1="));
+    REQUIRE(contains(encrypted, "\r\n\r\n;OemSignType1="));
     REQUIRE(contains(encrypted, "5HsDS8UAjZnKSU9I2xbCubqA10"));
 
     const auto encrypted_lf =
@@ -76,6 +76,7 @@ TEST_CASE("Profile conversion routes Feature entries and signs selected bytes",
                                             .header_comment = "WPS OEM configuration",
                                             .line_ending = wps::profile::LineEnding::lf });
     REQUIRE(encrypted_lf.starts_with(";WPS OEM configuration\n\n[Setup]"));
+    REQUIRE(contains(encrypted_lf, "\n\n;OemSignType1="));
     REQUIRE_FALSE(contains_carriage_return(encrypted_lf));
 
     const auto decrypted = converter.decrypt_document(encrypted, wps::profile::LineEnding::lf);

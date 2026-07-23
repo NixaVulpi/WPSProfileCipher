@@ -6,7 +6,7 @@ endif()
 
 project(
   wps_profile_cipher
-  VERSION 2.0.0
+  VERSION 2.0.1
   DESCRIPTION "Cross-platform WPS profile encryption, decryption, and OEM signing tool"
   LANGUAGES CXX
 )

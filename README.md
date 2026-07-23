@@ -1,4 +1,4 @@
-# WPS Profile Cipher
+﻿# WPS Profile Cipher
 
 跨平台的 WPS 配置文件加密、解密与 OEM 签名工具。项目使用 C++20、CMake、Ninja 和 vcpkg，基于 Crypto++、CLI11、SimpleIni 和 Catch2 构建。
 
@@ -35,8 +35,7 @@ wps-profile-cipher decrypt-text "NsbhfV4nLv_oZGENyLSVZA.."
 
 ```powershell
 wps-profile-cipher encrypt-text --codec feature "16777331=0"
-wps-profile-cipher decrypt-text --codec feature `
-  "5HsDS8UAjZnKSU9I2xbCubqA10=KHsDS8UAjZn4U3A385v-NVsE10"
+wps-profile-cipher decrypt-text --codec feature "5HsDS8UAjZnKSU9I2xbCubqA10=KHsDS8UAjZn4U3A385v-NVsE10"
 ```
 
 配置文件转换：

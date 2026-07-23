@@ -148,6 +148,7 @@ std::string ProfileConverter::encrypt_document(const std::string_view plain_ini,
     }
     if (options.append_oem_signature)
     {
+        output += line_ending_text(options.line_ending);
         const auto* data = reinterpret_cast<const std::uint8_t*>(output.data());
         const auto signed_output = OemSignature {}.append({ data, output.size() });
         return { signed_output.begin(), signed_output.end() };
