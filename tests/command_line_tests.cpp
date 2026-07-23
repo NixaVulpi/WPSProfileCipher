@@ -22,8 +22,7 @@ template <std::size_t Size>
 {
     std::ostringstream output;
     std::ostringstream error_output;
-    const auto exit_code = wps::profile::cli::run_command_line(
-        static_cast<int>(arguments.size()), arguments.data(), output, error_output);
+    const auto exit_code = wps::profile::cli::run_command_line(static_cast<int>(arguments.size()), arguments.data(), output, error_output);
     return { exit_code, output.str(), error_output.str() };
 }
 

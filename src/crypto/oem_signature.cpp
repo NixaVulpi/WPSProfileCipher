@@ -77,11 +77,9 @@ ByteBuffer OemSignature::append(const std::span<const std::uint8_t> content) con
 
 ByteBuffer OemSignature::append(const std::span<const std::uint8_t> content, const InitializationVector& initialization_vector) const
 {
-    ByteBuffer output { content.begin(), content.end() };
-    append_ascii(output, signature_header);
-
-    const auto digest = md5(output);
+    const auto digest = md5(content);
     const auto digest_hex = upper_hex(digest);
+
     CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
     encryption.SetKeyWithIV(as_crypto_bytes(aes_key.data()), aes_key.size(), as_crypto_bytes(initialization_vector.data()), initialization_vector.size());
 
@@ -96,6 +94,9 @@ ByteBuffer OemSignature::append(const std::span<const std::uint8_t> content, con
     }
     std::ranges::transform(encrypted_digest, std::back_inserter(signature_payload), [](const char byte)
                            { return static_cast<std::uint8_t>(byte); });
+
+    ByteBuffer output { content.begin(), content.end() };
+    append_ascii(output, signature_header);
     append_ascii(output, upper_hex(signature_payload));
     return output;
 }
