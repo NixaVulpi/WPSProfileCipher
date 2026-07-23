@@ -62,8 +62,14 @@ TEST_CASE("Profile conversion routes Feature entries and signs selected bytes",
                                        "enabled=true\n\n"
                                        "[Feature]\n"
                                        "16777331=0\n";
+    const wps::profile::OemSignature::Materials materials {
+        .machine_guid = "c7c28a05-78ea-4d8b-9af2-23d5b3defcdd",
+        .setup_install_partial_data = "CpW6IzoiIVKrRCtvYspCMeyB48yqWdkM",
+        .registry_install_partial_data = "38deabbe11fec32d",
+    };
     const auto encrypted =
         converter.encrypt_document(plain, { .append_oem_signature = true,
+                                            .oem_signature_materials = materials,
                                             .header_comment = "WPS OEM configuration",
                                             .line_ending = wps::profile::LineEnding::crlf });
 
@@ -72,6 +78,7 @@ TEST_CASE("Profile conversion routes Feature entries and signs selected bytes",
     REQUIRE(contains(encrypted, "5HsDS8UAjZnKSU9I2xbCubqA10"));
 
     const auto encrypted_lf = converter.encrypt_document(plain, { .append_oem_signature = true,
+                                            .oem_signature_materials = materials,
                                             .header_comment = "WPS OEM configuration",
                                             .line_ending = wps::profile::LineEnding::lf });
     REQUIRE(encrypted_lf.starts_with(";WPS OEM configuration\n\n[Setup]"));
@@ -84,7 +91,12 @@ TEST_CASE("Profile conversion routes Feature entries and signs selected bytes",
     REQUIRE_FALSE(contains_carriage_return(decrypted));
 
     REQUIRE_THROWS(converter.encrypt_document(plain, { .append_oem_signature = false,
+                                            .oem_signature_materials = std::nullopt,
                                             .header_comment = "first\nsecond",
+                                            .line_ending = wps::profile::LineEnding::native }));
+    REQUIRE_THROWS(converter.encrypt_document(plain, { .append_oem_signature = true,
+                                            .oem_signature_materials = std::nullopt,
+                                            .header_comment = std::nullopt,
                                             .line_ending = wps::profile::LineEnding::native }));
 }
 
@@ -115,6 +127,7 @@ TEST_CASE("Profile files round trip through the filesystem", "[profile-converter
     const wps::profile::ProfileConverter converter;
     converter.encrypt_file(plain_path, cipher_path,
                            { .append_oem_signature = false,
+                             .oem_signature_materials = std::nullopt,
                              .header_comment = std::nullopt,
                              .line_ending = wps::profile::LineEnding::lf });
     converter.decrypt_file(cipher_path, result_path, wps::profile::LineEnding::lf);

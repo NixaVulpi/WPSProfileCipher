@@ -117,12 +117,18 @@ int run_command_line(const int argc, const char* const argv[], std::ostream& out
     bool append_signature = false;
     std::string header_comment;
     std::string encryption_line_ending { "native" };
+    std::string oem_machine_guid;
+    std::string oem_setup_install_partial_data;
+    std::string oem_registry_install_partial_data;
     auto* encrypt_file = app.add_subcommand("encrypt-file", "Encrypt a plain INI file");
     encrypt_file->add_option("input", plain_input, "Plain INI input path")
         ->required()
         ->check(CLI::ExistingFile);
     encrypt_file->add_option("output", cipher_output, "Cipher INI output path")->required();
     encrypt_file->add_flag("--sign", append_signature, "Append an OemSignType1 signature");
+    encrypt_file->add_option("--oem-machine-guid", oem_machine_guid, "MachineGuid used by WPS OemSignType1 key derivation");
+    encrypt_file->add_option("--oem-setup-install-partial-data", oem_setup_install_partial_data, "InstallPartialData value from office6/cfgs/setup.cfg");
+    encrypt_file->add_option("--oem-registry-install-partial-data", oem_registry_install_partial_data, "InstallPartialData value from the WPS registry key");
     const auto* header_comment_option = encrypt_file->add_option(
         "--header-comment", header_comment, "Comment before the first section");
     encrypt_file->add_option("--line-ending", encryption_line_ending, "Output: native, crlf, or lf")
@@ -162,8 +168,22 @@ int run_command_line(const int argc, const char* const argv[], std::ostream& out
         }
         else if (*encrypt_file)
         {
+            std::optional<OemSignature::Materials> signature_materials;
+            if (append_signature)
+            {
+                if (oem_machine_guid.empty() || oem_setup_install_partial_data.empty() || oem_registry_install_partial_data.empty())
+                {
+                    throw std::invalid_argument("--sign requires --oem-machine-guid, --oem-setup-install-partial-data, and --oem-registry-install-partial-data.");
+                }
+                signature_materials = OemSignature::Materials {
+                    .machine_guid = oem_machine_guid,
+                    .setup_install_partial_data = oem_setup_install_partial_data,
+                    .registry_install_partial_data = oem_registry_install_partial_data,
+                };
+            }
             EncryptionOptions options {
                 .append_oem_signature = append_signature,
+                .oem_signature_materials = std::move(signature_materials),
                 .header_comment = header_comment_option->count() > 0 ? std::optional<std::string> { header_comment } : std::nullopt,
                 .line_ending = parse_line_ending(encryption_line_ending),
             };

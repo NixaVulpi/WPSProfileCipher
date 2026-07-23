@@ -148,9 +148,13 @@ std::string ProfileConverter::encrypt_document(const std::string_view plain_ini,
     }
     if (options.append_oem_signature)
     {
+        if (!options.oem_signature_materials)
+        {
+            throw std::invalid_argument("OEM signature materials are required when appending an OemSignType1 signature.");
+        }
         output += line_ending_text(options.line_ending);
         const auto* data = reinterpret_cast<const std::uint8_t*>(output.data());
-        const auto signed_output = OemSignature {}.append({ data, output.size() });
+        const auto signed_output = OemSignature {}.append({ data, output.size() }, *options.oem_signature_materials);
         return { signed_output.begin(), signed_output.end() };
     }
     return output;

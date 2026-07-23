@@ -1,6 +1,7 @@
 #pragma once
 
 #include "wps_profile_cipher/line_ending.hpp"
+#include "wps_profile_cipher/oem_signature.hpp"
 
 #include <filesystem>
 #include <optional>
@@ -13,6 +14,7 @@ namespace wps::profile
 struct EncryptionOptions final
 {
     bool append_oem_signature { false };
+    std::optional<OemSignature::Materials> oem_signature_materials;
     std::optional<std::string> header_comment;
     LineEnding line_ending { LineEnding::native };
 };

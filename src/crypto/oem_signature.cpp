@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
 #include <string_view>
 
 #include <cryptopp/aes.h>
@@ -20,7 +21,8 @@ namespace
 
 constexpr std::string_view signature_header = ";OemSignType1=";
 constexpr std::string_view iv_mask = "S3kP06v2Ne04lDeX";
-constexpr std::string_view aes_key = "F9AF610AE6164C73B78B0A99D8B72890";
+constexpr std::string_view key_salt = "9B0p3z7GcKf2XtR5L6Y8Q1W4E7R3T6Y8";
+constexpr std::string_view key_mask = "k8Se2hXt6ZDKrkWTQNrZGs3w4TBT10Jt";
 
 [[nodiscard]] const CryptoPP::byte* as_crypto_bytes(const std::uint8_t* data) noexcept
 {
@@ -52,6 +54,12 @@ md5(const std::span<const std::uint8_t> bytes)
     return digest;
 }
 
+[[nodiscard]] std::array<std::uint8_t, CryptoPP::Weak::MD5::DIGESTSIZE>
+md5_ascii(const std::string_view text)
+{
+    return md5({ reinterpret_cast<const std::uint8_t*>(text.data()), text.size() });
+}
+
 [[nodiscard]] std::string upper_hex(const std::span<const std::uint8_t> bytes)
 {
     constexpr std::string_view digits = "0123456789ABCDEF";
@@ -65,20 +73,46 @@ md5(const std::span<const std::uint8_t> bytes)
     return output;
 }
 
+[[nodiscard]] std::array<std::uint8_t, CryptoPP::AES::MAX_KEYLENGTH>
+derive_aes_key(const OemSignature::Materials& materials)
+{
+    std::string seed;
+    seed.reserve(materials.machine_guid.size() + key_salt.size() + materials.setup_install_partial_data.size() + materials.registry_install_partial_data.size());
+    seed += materials.machine_guid;
+    seed += key_salt;
+    seed += materials.setup_install_partial_data;
+    seed += materials.registry_install_partial_data;
+
+    const auto seed_digest_hex = upper_hex(md5_ascii(seed));
+    std::array<std::uint8_t, CryptoPP::AES::MAX_KEYLENGTH> key {};
+    for (std::size_t index = 0; index < key.size(); ++index)
+    {
+        key[index] = static_cast<std::uint8_t>(seed_digest_hex[index]) ^ static_cast<std::uint8_t>(key_mask[index]);
+    }
+    return key;
+}
+
+[[nodiscard]] std::string signature_digest_hex(const std::span<const std::uint8_t> content)
+{
+    ByteBuffer signed_region { content.begin(), content.end() };
+    append_ascii(signed_region, signature_header);
+    return upper_hex(md5(signed_region));
+}
+
 } // namespace
 
-ByteBuffer OemSignature::append(const std::span<const std::uint8_t> content) const
+ByteBuffer OemSignature::append(const std::span<const std::uint8_t> content, const Materials& materials) const
 {
     InitializationVector initialization_vector {};
     CryptoPP::AutoSeededRandomPool random;
     random.GenerateBlock(as_crypto_bytes(initialization_vector.data()), initialization_vector.size());
-    return append(content, initialization_vector);
+    return append(content, materials, initialization_vector);
 }
 
-ByteBuffer OemSignature::append(const std::span<const std::uint8_t> content, const InitializationVector& initialization_vector) const
+ByteBuffer OemSignature::append(const std::span<const std::uint8_t> content, const Materials& materials, const InitializationVector& initialization_vector) const
 {
-    const auto digest = md5(content);
-    const auto digest_hex = upper_hex(digest);
+    const auto digest_hex = signature_digest_hex(content);
+    const auto aes_key = derive_aes_key(materials);
 
     CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryption;
     encryption.SetKeyWithIV(as_crypto_bytes(aes_key.data()), aes_key.size(), as_crypto_bytes(initialization_vector.data()), initialization_vector.size());
