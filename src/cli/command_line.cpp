@@ -7,7 +7,6 @@
 #include <charconv>
 #include <cstdint>
 #include <exception>
-#include <filesystem>
 #include <optional>
 #include <ostream>
 #include <stdexcept>
@@ -184,11 +183,11 @@ template <typename TChar>
                 .header_comment = header_comment_option->count() > 0 ? std::optional<std::string> { header_comment } : std::nullopt,
                 .line_ending = parse_line_ending(encryption_line_ending),
             };
-            ProfileConverter {}.encrypt_file(std::filesystem::path { plain_input }, std::filesystem::path { cipher_output }, options);
+            ProfileConverter {}.encrypt_file(CLI::to_path(plain_input), CLI::to_path(cipher_output), options);
         }
         else if (*decrypt_file)
         {
-            ProfileConverter {}.decrypt_file(std::filesystem::path { cipher_input }, std::filesystem::path { plain_output }, parse_line_ending(decryption_line_ending));
+            ProfileConverter {}.decrypt_file(CLI::to_path(cipher_input), CLI::to_path(plain_output), parse_line_ending(decryption_line_ending));
         }
         return 0;
     }
