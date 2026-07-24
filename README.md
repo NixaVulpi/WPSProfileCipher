@@ -17,11 +17,15 @@
 程序使用子命令区分操作：
 
 ```text
-wps-profile-cipher encrypt-text [--codec profile|feature] <text>
 wps-profile-cipher decrypt-text [--codec profile|feature] <text>
-wps-profile-cipher encrypt-file [--sign] [--header-comment <text>]
-                                [--line-ending native|crlf|lf] <input> <output>
+wps-profile-cipher encrypt-text [--codec profile|feature] <text>
 wps-profile-cipher decrypt-file [--line-ending native|crlf|lf] <input> <output>
+wps-profile-cipher encrypt-file [--sign]
+                                [--oem-machine-guid <guid>]
+                                [--oem-setup-install-partial-data <data>]
+                                [--oem-registry-install-partial-data <data>]
+                                [--header-comment <text>]
+                                [--line-ending native|crlf|lf] <input> <output>
 ```
 
 普通文本加密与解密：
@@ -56,7 +60,10 @@ wps-profile-cipher decrypt-file --line-ending lf product.dat product.plain.ini
 
 ```powershell
 wps-profile-cipher encrypt-file --sign `
-  --header-comment "WPS OEM configuration" `
+  --oem-machine-guid "c7c28a05-78ea-4d8b-9af2-23d5b3defcdd" `
+  --oem-setup-install-partial-data "CpW6IzoiIVKrRCtvYspCMeyB48yqWdkM" `
+  --oem-registry-install-partial-data "38deabbe11fec32d" `
+  --header-comment "/DWPS_SETUP" `
   --line-ending crlf `
   oem.plain.ini oem.ini
 ```
