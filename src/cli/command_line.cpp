@@ -46,8 +46,7 @@ enum class Codec
     return LineEnding::native;
 }
 
-[[nodiscard]] std::pair<std::string_view, std::string_view>
-split_feature_entry(const std::string_view input)
+[[nodiscard]] std::pair<std::string_view, std::string_view> split_feature_entry(const std::string_view input)
 {
     const auto separator = input.find('=');
     if (separator == std::string_view::npos || separator == 0 || separator + 1 == input.size())
@@ -87,12 +86,10 @@ split_feature_entry(const std::string_view input)
     return std::to_string(decoded.first) + '=' + std::to_string(decoded.second);
 }
 
-} // namespace
-
-int run_command_line(const int argc, const char* const argv[], std::ostream& output, std::ostream& error_output)
+template <typename TChar>
+[[nodiscard]] int run_command_line_impl(const int argc, const TChar* const argv[], std::ostream& output, std::ostream& error_output)
 {
-    const auto* application_name = argc > 0 && argv[0] != nullptr ? argv[0] : "wps-profile-cipher";
-    CLI::App app { "Encrypt, decrypt, and sign WPS profile files", application_name };
+    CLI::App app { "Encrypt, decrypt, and sign WPS profile files", "wps-profile-cipher" };
     app.set_version_flag("--version", std::string { version });
     app.require_subcommand(1, 1);
 
@@ -200,6 +197,18 @@ int run_command_line(const int argc, const char* const argv[], std::ostream& out
         error_output << "error: " << error.what() << '\n';
         return 1;
     }
+}
+
+} // namespace
+
+[[nodiscard]] int run_command_line(const int argc, const char* const argv[], std::ostream& output, std::ostream& error_output)
+{
+    return run_command_line_impl(argc, argv, output, error_output);
+}
+
+[[nodiscard]] int run_command_line(const int argc, const wchar_t* const argv[], std::ostream& output, std::ostream& error_output)
+{
+    return run_command_line_impl(argc, argv, output, error_output);
 }
 
 } // namespace wps::profile::cli
