@@ -21,8 +21,8 @@ wps-profile-cipher decrypt-text [--codec profile|feature] <text>
 wps-profile-cipher encrypt-text [--codec profile|feature] <text>
 wps-profile-cipher decrypt-file [--line-ending native|crlf|lf] <input> <output>
 wps-profile-cipher sign-file [--oem-machine-guid <guid>]
-                            [--oem-setup-install-partial-data <data>]
-                            [--oem-registry-install-partial-data <data>] <input> <output>
+                             [--oem-setup-install-partial-data <data>]
+                             [--oem-registry-install-partial-data <data>] <input> <output>
 wps-profile-cipher encrypt-file [--sign]
                                 [--oem-machine-guid <guid>]
                                 [--oem-setup-install-partial-data <data>]
