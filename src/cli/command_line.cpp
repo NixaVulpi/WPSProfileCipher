@@ -85,6 +85,32 @@ enum class Codec
     return std::to_string(decoded.first) + '=' + std::to_string(decoded.second);
 }
 
+void add_oem_material_options(CLI::App& command,
+                              std::string& machine_guid,
+                              std::string& setup_install_partial_data,
+                              std::string& registry_install_partial_data)
+{
+    command.add_option("--oem-machine-guid", machine_guid, "MachineGuid used by WPS OemSignType1 key derivation");
+    command.add_option("--oem-setup-install-partial-data", setup_install_partial_data, "InstallPartialData value from office6/cfgs/setup.cfg");
+    command.add_option("--oem-registry-install-partial-data", registry_install_partial_data, "InstallPartialData value from the WPS registry key");
+}
+
+[[nodiscard]] OemSignature::Materials require_oem_materials(const std::string_view option_name,
+                                                             const std::string& machine_guid,
+                                                             const std::string& setup_install_partial_data,
+                                                             const std::string& registry_install_partial_data)
+{
+    if (machine_guid.empty() || setup_install_partial_data.empty() || registry_install_partial_data.empty())
+    {
+        throw std::invalid_argument(std::string { option_name } + " requires --oem-machine-guid, --oem-setup-install-partial-data, and --oem-registry-install-partial-data.");
+    }
+    return OemSignature::Materials {
+        .machine_guid = machine_guid,
+        .setup_install_partial_data = setup_install_partial_data,
+        .registry_install_partial_data = registry_install_partial_data,
+    };
+}
+
 template <typename TChar>
 [[nodiscard]] int run_command_line_impl(const int argc, const TChar* const argv[], std::ostream& output, std::ostream& error_output)
 {
@@ -122,14 +148,21 @@ template <typename TChar>
         ->check(CLI::ExistingFile);
     encrypt_file->add_option("output", cipher_output, "Cipher INI output path")->required();
     encrypt_file->add_flag("--sign", append_signature, "Append an OemSignType1 signature");
-    encrypt_file->add_option("--oem-machine-guid", oem_machine_guid, "MachineGuid used by WPS OemSignType1 key derivation");
-    encrypt_file->add_option("--oem-setup-install-partial-data", oem_setup_install_partial_data, "InstallPartialData value from office6/cfgs/setup.cfg");
-    encrypt_file->add_option("--oem-registry-install-partial-data", oem_registry_install_partial_data, "InstallPartialData value from the WPS registry key");
+    add_oem_material_options(*encrypt_file, oem_machine_guid, oem_setup_install_partial_data, oem_registry_install_partial_data);
     const auto* header_comment_option = encrypt_file->add_option(
         "--header-comment", header_comment, "Comment before the first section");
     encrypt_file->add_option("--line-ending", encryption_line_ending, "Output: native, crlf, or lf")
         ->check(CLI::IsMember({ "native", "crlf", "lf" }))
         ->capture_default_str();
+
+    std::string unsigned_cipher_input;
+    std::string signed_cipher_output;
+    auto* sign_file = app.add_subcommand("sign-file", "Append an OemSignType1 signature to an encrypted INI file");
+    sign_file->add_option("input", unsigned_cipher_input, "Unsigned encrypted INI input path")
+        ->required()
+        ->check(CLI::ExistingFile);
+    sign_file->add_option("output", signed_cipher_output, "Signed INI output path")->required();
+    add_oem_material_options(*sign_file, oem_machine_guid, oem_setup_install_partial_data, oem_registry_install_partial_data);
 
     std::string cipher_input;
     std::string plain_output;
@@ -167,15 +200,8 @@ template <typename TChar>
             std::optional<OemSignature::Materials> signature_materials;
             if (append_signature)
             {
-                if (oem_machine_guid.empty() || oem_setup_install_partial_data.empty() || oem_registry_install_partial_data.empty())
-                {
-                    throw std::invalid_argument("--sign requires --oem-machine-guid, --oem-setup-install-partial-data, and --oem-registry-install-partial-data.");
-                }
-                signature_materials = OemSignature::Materials {
-                    .machine_guid = oem_machine_guid,
-                    .setup_install_partial_data = oem_setup_install_partial_data,
-                    .registry_install_partial_data = oem_registry_install_partial_data,
-                };
+                signature_materials = require_oem_materials(
+                    "--sign", oem_machine_guid, oem_setup_install_partial_data, oem_registry_install_partial_data);
             }
             EncryptionOptions options {
                 .append_oem_signature = append_signature,
@@ -184,6 +210,12 @@ template <typename TChar>
                 .line_ending = parse_line_ending(encryption_line_ending),
             };
             ProfileConverter {}.encrypt_file(CLI::to_path(plain_input), CLI::to_path(cipher_output), options);
+        }
+        else if (*sign_file)
+        {
+            ProfileConverter {}.sign_file(
+                CLI::to_path(unsigned_cipher_input), CLI::to_path(signed_cipher_output),
+                require_oem_materials("sign-file", oem_machine_guid, oem_setup_install_partial_data, oem_registry_install_partial_data));
         }
         else if (*decrypt_file)
         {

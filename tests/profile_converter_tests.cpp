@@ -39,6 +39,24 @@ TEST_CASE("SimpleIni parsing preserves raw JSON and paths", "[profile-document]"
     REQUIRE(contains(crlf, "path = C:\\Program Files\\WPS\r\n"));
 }
 
+TEST_CASE("Profile encryption only encrypts keys when values are empty", "[profile-converter]")
+{
+    const wps::profile::ProfileConverter converter;
+    constexpr std::string_view plain = "[Setup]\nSNOverNumberLimit=\n";
+    wps::profile::EncryptionOptions options;
+    options.line_ending = wps::profile::LineEnding::lf;
+
+    REQUIRE(converter.encrypt_document(plain, options) == "[Setup]\nHTPDtVFg3n-uoBiUYsZZ0Rw4cgQP_aqsrL3azzCMIZI. = \n");
+}
+
+TEST_CASE("Profile decryption only decrypts keys when values are empty", "[profile-converter]")
+{
+    const wps::profile::ProfileConverter converter;
+    constexpr std::string_view cipher = "[Setup]\nHTPDtVFg3n-uoBiUYsZZ0Rw4cgQP_aqsrL3azzCMIZI.=\n";
+
+    REQUIRE(converter.decrypt_document(cipher, wps::profile::LineEnding::lf) == "[Setup]\nSNOverNumberLimit = \n");
+}
+
 TEST_CASE("INI serialization supports native, CRLF, and LF output", "[profile-document]")
 {
     const auto document = wps::profile::ProfileDocument::parse("[Setup]\nenabled=true\n");
@@ -49,9 +67,7 @@ TEST_CASE("INI serialization supports native, CRLF, and LF output", "[profile-do
     REQUIRE(contains(crlf, "[Setup]\r\nenabled = true\r\n"));
     REQUIRE(contains(lf, "[Setup]\nenabled = true\n"));
     REQUIRE_FALSE(contains_carriage_return(lf));
-    REQUIRE(
-        native ==
-        (wps::profile::line_ending_text(wps::profile::LineEnding::native) == "\r\n" ? crlf : lf));
+    REQUIRE(native == (wps::profile::line_ending_text(wps::profile::LineEnding::native) == "\r\n" ? crlf : lf));
 }
 
 TEST_CASE("Profile conversion routes Feature entries and signs selected bytes",
@@ -98,6 +114,22 @@ TEST_CASE("Profile conversion routes Feature entries and signs selected bytes",
                                             .oem_signature_materials = std::nullopt,
                                             .header_comment = std::nullopt,
                                             .line_ending = wps::profile::LineEnding::native }));
+}
+
+TEST_CASE("Profile converter signs an existing encrypted document", "[profile-converter]")
+{
+    const wps::profile::ProfileConverter converter;
+    constexpr std::string_view cipher = "[Setup]\nHTPDtVFg3n-uoBiUYsZZ0Rw4cgQP_aqsrL3azzCMIZI.=\n";
+    const wps::profile::OemSignature::Materials materials {
+        .machine_guid = "c7c28a05-78ea-4d8b-9af2-23d5b3defcdd",
+        .setup_install_partial_data = "CpW6IzoiIVKrRCtvYspCMeyB48yqWdkM",
+        .registry_install_partial_data = "38deabbe11fec32d",
+    };
+
+    const auto signed_document = converter.sign_document(cipher, materials);
+
+    REQUIRE(signed_document.starts_with(cipher));
+    REQUIRE(contains(signed_document, ";OemSignType1="));
 }
 
 TEST_CASE("Known L10N profile decrypts", "[profile-converter]")

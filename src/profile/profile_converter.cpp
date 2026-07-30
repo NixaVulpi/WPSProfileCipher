@@ -106,6 +106,13 @@ void write_file(const std::filesystem::path& path, const std::string_view conten
     }
 }
 
+[[nodiscard]] std::string append_oem_signature(const std::string_view content, const OemSignature::Materials& materials)
+{
+    const auto* data = reinterpret_cast<const std::uint8_t*>(content.data());
+    const auto signed_output = OemSignature {}.append({ data, content.size() }, materials);
+    return { signed_output.begin(), signed_output.end() };
+}
+
 } // namespace
 
 std::string ProfileConverter::encrypt_document(const std::string_view plain_ini, const EncryptionOptions& options) const
@@ -134,8 +141,11 @@ std::string ProfileConverter::encrypt_document(const std::string_view plain_ini,
             for (auto& entry : section.entries)
             {
                 entry.key = profile_cipher.encrypt(entry.key);
-                entry.value = transform_list(entry.value, [&profile_cipher](const std::string_view part)
-                                             { return profile_cipher.encrypt(part); });
+                if (!entry.value.empty())
+                {
+                    entry.value = transform_list(entry.value, [&profile_cipher](const std::string_view part)
+                                                 { return profile_cipher.encrypt(part); });
+                }
             }
         }
     }
@@ -153,9 +163,7 @@ std::string ProfileConverter::encrypt_document(const std::string_view plain_ini,
             throw std::invalid_argument("OEM signature materials are required when appending an OemSignType1 signature.");
         }
         output += line_ending_text(options.line_ending);
-        const auto* data = reinterpret_cast<const std::uint8_t*>(output.data());
-        const auto signed_output = OemSignature {}.append({ data, output.size() }, *options.oem_signature_materials);
-        return { signed_output.begin(), signed_output.end() };
+        return append_oem_signature(output, *options.oem_signature_materials);
     }
     return output;
 }
@@ -181,12 +189,20 @@ std::string ProfileConverter::decrypt_document(const std::string_view cipher_ini
             for (auto& entry : section.entries)
             {
                 entry.key = profile_cipher.decrypt(entry.key);
-                entry.value = transform_list(entry.value, [&profile_cipher](const std::string_view part)
-                                             { return profile_cipher.decrypt(part); });
+                if (!entry.value.empty())
+                {
+                    entry.value = transform_list(entry.value, [&profile_cipher](const std::string_view part)
+                                                 { return profile_cipher.decrypt(part); });
+                }
             }
         }
     }
     return document.serialize(line_ending);
+}
+
+std::string ProfileConverter::sign_document(const std::string_view cipher_ini, const OemSignature::Materials& materials) const
+{
+    return append_oem_signature(cipher_ini, materials);
 }
 
 void ProfileConverter::encrypt_file(const std::filesystem::path& plain_input, const std::filesystem::path& cipher_output, const EncryptionOptions& options) const
@@ -197,6 +213,13 @@ void ProfileConverter::encrypt_file(const std::filesystem::path& plain_input, co
 void ProfileConverter::decrypt_file(const std::filesystem::path& cipher_input, const std::filesystem::path& plain_output, const LineEnding line_ending) const
 {
     write_file(plain_output, decrypt_document(read_file(cipher_input), line_ending));
+}
+
+void ProfileConverter::sign_file(const std::filesystem::path& cipher_input,
+                                 const std::filesystem::path& signed_output,
+                                 const OemSignature::Materials& materials) const
+{
+    write_file(signed_output, sign_document(read_file(cipher_input), materials));
 }
 
 } // namespace wps::profile

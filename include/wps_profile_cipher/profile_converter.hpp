@@ -24,9 +24,11 @@ class ProfileConverter final
 public:
     [[nodiscard]] std::string encrypt_document(std::string_view plain_ini, const EncryptionOptions& options = {}) const;
     [[nodiscard]] std::string decrypt_document(std::string_view cipher_ini, LineEnding line_ending = LineEnding::native) const;
+    [[nodiscard]] std::string sign_document(std::string_view cipher_ini, const OemSignature::Materials& materials) const;
 
     void encrypt_file(const std::filesystem::path& plain_input, const std::filesystem::path& cipher_output, const EncryptionOptions& options = {}) const;
     void decrypt_file(const std::filesystem::path& cipher_input, const std::filesystem::path& plain_output, LineEnding line_ending = LineEnding::native) const;
+    void sign_file(const std::filesystem::path& cipher_input, const std::filesystem::path& signed_output, const OemSignature::Materials& materials) const;
 };
 
 } // namespace wps::profile

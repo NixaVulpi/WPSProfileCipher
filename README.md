@@ -20,6 +20,9 @@
 wps-profile-cipher decrypt-text [--codec profile|feature] <text>
 wps-profile-cipher encrypt-text [--codec profile|feature] <text>
 wps-profile-cipher decrypt-file [--line-ending native|crlf|lf] <input> <output>
+wps-profile-cipher sign-file [--oem-machine-guid <guid>]
+                            [--oem-setup-install-partial-data <data>]
+                            [--oem-registry-install-partial-data <data>] <input> <output>
 wps-profile-cipher encrypt-file [--sign]
                                 [--oem-machine-guid <guid>]
                                 [--oem-setup-install-partial-data <data>]
@@ -33,6 +36,7 @@ wps-profile-cipher encrypt-file [--sign]
 ```powershell
 wps-profile-cipher encrypt-text "true"
 wps-profile-cipher decrypt-text "NsbhfV4nLv_oZGENyLSVZA.."
+wps-profile-cipher decrypt-text -- "-l3u7iDp9zr7UU3Rzed9etH_HWpeBrG_9hpfdL1oM7Y."
 ```
 
 `[Feature]` 条目加密与解密：
@@ -47,7 +51,14 @@ wps-profile-cipher decrypt-text --codec feature "5HsDS8UAjZnKSU9I2xbCubqA10=KHsD
 ```powershell
 wps-profile-cipher encrypt-file product.plain.ini product.dat
 wps-profile-cipher decrypt-file product.dat product.plain.ini
+wps-profile-cipher sign-file `
+  --oem-machine-guid "c7c28a05-78ea-4d8b-9af2-23d5b3defcdd" `
+  --oem-setup-install-partial-data "CpW6IzoiIVKrRCtvYspCMeyB48yqWdkM" `
+  --oem-registry-install-partial-data "38deabbe11fec32d" `
+  product.unsigned.ini product.dat
 ```
+
+已有加密但尚未签名的 INI 可以通过 `sign-file` 直接追加签名。该命令会原样保留输入字节，不会再次加密。
 
 默认的 `native` 在 Windows 写 CRLF，在 Linux/macOS 写 LF。需要跨平台固定字节布局时可以指定：
 
