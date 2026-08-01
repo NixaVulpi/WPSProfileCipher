@@ -17,6 +17,17 @@ include(GNUInstallDirs)
 
 option(WPS_PROFILE_CIPHER_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 option(WPS_PROFILE_CIPHER_STATIC_MSVC_RUNTIME "Use the static MSVC runtime (/MT or /MTd)" ON)
+option(WPS_PROFILE_CIPHER_TARGET_WINDOWS_7 "Target Windows 7 SP1 on x86/x64" OFF)
+
+if(WPS_PROFILE_CIPHER_TARGET_WINDOWS_7)
+  if(NOT WIN32)
+    message(FATAL_ERROR "WPS_PROFILE_CIPHER_TARGET_WINDOWS_7 is only valid for Windows builds")
+  endif()
+  if(MSVC AND MSVC_VERSION GREATER_EQUAL 1950)
+    message(FATAL_ERROR "Windows 7 builds require the Visual Studio 2022 v143 toolset (MSVC 19.4x); Visual Studio 2026 v145 does not support Windows 7")
+  endif()
+  add_compile_definitions(WINVER=0x0601 _WIN32_WINNT=0x0601)
+endif()
 
 if(MSVC)
   if(WPS_PROFILE_CIPHER_STATIC_MSVC_RUNTIME)

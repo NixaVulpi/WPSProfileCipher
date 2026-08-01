@@ -7,7 +7,7 @@
 - 加密或解密普通配置字段：AES-256/ECB/PKCS#7 与 WPS Base64 变体。
 - 自动处理 `[Feature]` 节：IDEA、WPS C64 编码和兼容性校验帧。
 - 为加密后的 OEM INI 追加 `OemSignType1` 签名。
-- 在 Windows x86/x64/arm64、Linux x64/arm64 和 macOS x64/arm64 构建。
+- 在 Windows x86/x64/arm64、Linux x64/arm64 和 macOS x64/arm64 构建；Windows x86/x64 发布版本兼容 Windows 7 SP1。
 - 默认使用平台原生换行，也可显式指定 CRLF 或 LF。
 
 > 这些算法和固定密钥用于兼容已有 WPS 文件格式，不适合保护新的敏感数据。
@@ -150,9 +150,6 @@ ctest --preset "$preset"
 ```
 
 其他可选值为 `linux-arm64-release`、`macos-x64-release` 和 `macos-arm64-release`。
-
-Crypto++ 在所有目标上静态链接；Linux 的系统 C 运行库和 macOS 的系统库仍由操作系统动态提供。
-
 ## 项目结构
 
 ```text

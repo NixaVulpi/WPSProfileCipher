@@ -16,6 +16,7 @@
         "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake/triplets",
         "VCPKG_TARGET_TRIPLET": "x64-windows-static-mt",
         "WPS_PROFILE_CIPHER_STATIC_MSVC_RUNTIME": "ON",
+        "WPS_PROFILE_CIPHER_TARGET_WINDOWS_7": "ON",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "BUILD_TESTING": "ON"
       },
@@ -65,7 +66,8 @@
       "inherits": "windows-mt-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "VCPKG_TARGET_TRIPLET": "arm64-windows-static-mt"
+        "VCPKG_TARGET_TRIPLET": "arm64-windows-static-mt",
+        "WPS_PROFILE_CIPHER_TARGET_WINDOWS_7": "OFF"
       }
     },
     {
@@ -99,7 +101,8 @@
       "inherits": "windows-md-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "VCPKG_TARGET_TRIPLET": "arm64-windows-static-md"
+        "VCPKG_TARGET_TRIPLET": "arm64-windows-static-md",
+        "WPS_PROFILE_CIPHER_TARGET_WINDOWS_7": "OFF"
       }
     },
     {
