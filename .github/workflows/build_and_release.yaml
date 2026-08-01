@@ -157,6 +157,7 @@ jobs:
         uses: TheMrMilchmann/setup-msvc-dev@v4
         with:
           arch: ${{ matrix.msvc_architecture }}
+          toolset: '14.44'
 
       - name: Configure
         shell: bash
