@@ -1,5 +1,6 @@
 #include "wps_profile_cipher/profile_converter.hpp"
 #include "wps_profile_cipher/profile_document.hpp"
+#include "wps_profile_cipher/profile_value_cipher.hpp"
 
 #include <chrono>
 #include <filesystem>
@@ -140,6 +141,88 @@ TEST_CASE("Known L10N profile decrypts", "[profile-converter]")
                                         "pH-ngop1ivyPJhzD6NMUKQ.., xLEdt559NPj0AnzHtpEBoA..\n";
 
     REQUIRE(contains(converter.decrypt_document(cipher), "TX_FIELD_DATE[4] = M/d/yy, 1033"));
+}
+
+TEST_CASE("Indexed profile values split on commas and preserve a trailing comma", "[profile-converter]")
+{
+    const wps::profile::ProfileConverter converter;
+    constexpr std::string_view plain = "[Setup]\nAuthType[12] = first, second,  \n";
+    const wps::profile::EncryptionOptions options {
+        .append_oem_signature = false,
+        .oem_signature_materials = std::nullopt,
+        .header_comment = std::nullopt,
+        .line_ending = wps::profile::LineEnding::lf,
+    };
+
+    const auto encrypted = converter.encrypt_document(plain, options);
+    const auto decrypted = converter.decrypt_document(encrypted, wps::profile::LineEnding::lf);
+
+    REQUIRE(decrypted == "[Setup]\nAuthType[12] = first, second, \n");
+}
+
+TEST_CASE("Non-indexed profile values treat commas as ordinary text", "[profile-converter]")
+{
+    const wps::profile::ProfileConverter converter;
+    const wps::profile::ProfileValueCipher cipher;
+    constexpr std::string_view plain = "[Setup]\nDescription = first, second\n";
+    const wps::profile::EncryptionOptions options {
+        .append_oem_signature = false,
+        .oem_signature_materials = std::nullopt,
+        .header_comment = std::nullopt,
+        .line_ending = wps::profile::LineEnding::lf,
+    };
+
+    const auto encrypted = converter.encrypt_document(plain, options);
+    const auto document = wps::profile::ProfileDocument::parse(encrypted);
+    REQUIRE(document.sections().front().entries.front().value == cipher.encrypt("first, second"));
+}
+
+TEST_CASE("Indexed values without a following space stay as one value", "[profile-converter]")
+{
+    const wps::profile::ProfileConverter converter;
+    const wps::profile::ProfileValueCipher cipher;
+    constexpr std::string_view plain = "[Setup]\nAuthType[12] = exosphere,4,0,3,2,0\n";
+    const wps::profile::EncryptionOptions options {
+        .append_oem_signature = false,
+        .oem_signature_materials = std::nullopt,
+        .header_comment = std::nullopt,
+        .line_ending = wps::profile::LineEnding::lf,
+    };
+
+    const auto encrypted = converter.encrypt_document(plain, options);
+    const auto document = wps::profile::ProfileDocument::parse(encrypted);
+    REQUIRE(document.sections().front().entries.front().value == cipher.encrypt("exosphere,4,0,3,2,0"));
+    REQUIRE(converter.decrypt_document(encrypted, wps::profile::LineEnding::lf) == plain);
+}
+
+TEST_CASE("Indexed values keep a trailing comma without a following space inside the value", "[profile-converter]")
+{
+    const wps::profile::ProfileConverter converter;
+    const wps::profile::ProfileValueCipher cipher;
+    constexpr std::string_view plain = "[Setup]\nAuthType[12] = exosphere,4,0,3,2,0,\n";
+    const wps::profile::EncryptionOptions options {
+        .append_oem_signature = false,
+        .oem_signature_materials = std::nullopt,
+        .header_comment = std::nullopt,
+        .line_ending = wps::profile::LineEnding::lf,
+    };
+
+    const auto encrypted = converter.encrypt_document(plain, options);
+    const auto document = wps::profile::ProfileDocument::parse(encrypted);
+    REQUIRE(document.sections().front().entries.front().value == cipher.encrypt("exosphere,4,0,3,2,0,"));
+    REQUIRE(converter.decrypt_document(encrypted, wps::profile::LineEnding::lf) == plain);
+}
+
+TEST_CASE("AuthType sample decrypts its comma-separated value and keeps the trailing comma", "[profile-converter]")
+{
+    const wps::profile::ProfileConverter converter;
+    constexpr std::string_view cipher = "[Setup]\n"
+                                        "lWLEBioY2wO_QAyaP5EGxA..=FOFBCYtF0MxLDfkVHvWcQkCshp-4I5whzUDIOdkOuZo., "
+                                        "fa07ZvAxD_mUMI9YYNmPHQ.., \n";
+
+    const auto decrypted = converter.decrypt_document(cipher, wps::profile::LineEnding::lf);
+    REQUIRE(decrypted.starts_with("[Setup]\nAuthType[4] = "));
+    REQUIRE(decrypted.ends_with(", \n"));
 }
 
 TEST_CASE("Profile files round trip through the filesystem", "[profile-converter][file]")

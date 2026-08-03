@@ -14,6 +14,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace wps::profile
@@ -42,27 +43,162 @@ namespace
     return text.substr(first, last - first);
 }
 
-template <typename Transform>
-[[nodiscard]] std::string transform_list(const std::string_view value, Transform transform)
+[[nodiscard]] bool has_numeric_index_suffix(const std::string_view key) noexcept
 {
-    std::string output;
+    if (key.size() < 4 || key.back() != ']')
+    {
+        return false;
+    }
+
+    const auto opening_bracket = key.rfind('[');
+    if (opening_bracket == std::string_view::npos || opening_bracket + 2 >= key.size())
+    {
+        return false;
+    }
+
+    const auto index = key.substr(opening_bracket + 1, key.size() - opening_bracket - 2);
+    return std::ranges::all_of(index, [](const char character)
+                                { return character >= '0' && character <= '9'; });
+}
+
+[[nodiscard]] std::string entry_id(const std::string_view section, const std::string_view key)
+{
+    std::string id;
+    id.reserve(section.size() + key.size() + 1);
+    id += section;
+    id.push_back('\0');
+    id += key;
+    return id;
+}
+
+[[nodiscard]] std::unordered_set<std::string> find_trailing_list_separators(const std::string_view ini_text)
+{
+    std::unordered_set<std::string> entries;
+    std::string current_section;
     std::size_t offset = 0;
-    do
+    bool first_line = true;
+    while (offset <= ini_text.size())
+    {
+        const auto line_end = ini_text.find('\n', offset);
+        const auto length = line_end == std::string_view::npos ? ini_text.size() - offset : line_end - offset;
+        auto line = ini_text.substr(offset, length);
+        if (!line.empty() && line.back() == '\r')
+        {
+            line.remove_suffix(1);
+        }
+        if (first_line && line.starts_with("\xEF\xBB\xBF"))
+        {
+            line.remove_prefix(3);
+        }
+        first_line = false;
+
+        const auto trimmed_line = trim(line);
+        if (!trimmed_line.empty() && trimmed_line.front() != ';' && trimmed_line.front() != '#')
+        {
+            if (trimmed_line.front() == '[' && trimmed_line.back() == ']')
+            {
+                current_section = std::string { trim(trimmed_line.substr(1, trimmed_line.size() - 2)) };
+            }
+            else
+            {
+                const auto equals = line.find('=');
+                if (equals != std::string_view::npos && !current_section.empty())
+                {
+                    const auto key = trim(line.substr(0, equals));
+                    const auto value = line.substr(equals + 1);
+                    auto non_whitespace_end = value.size();
+                    while (non_whitespace_end > 0 && std::isspace(static_cast<unsigned char>(value[non_whitespace_end - 1])) != 0)
+                    {
+                        --non_whitespace_end;
+                    }
+
+                    const auto id = entry_id(current_section, key);
+                    if (non_whitespace_end > 0 && non_whitespace_end < value.size() && value[non_whitespace_end - 1] == ',')
+                    {
+                        entries.insert(id);
+                    }
+                    else
+                    {
+                        entries.erase(id);
+                    }
+                }
+            }
+        }
+
+        if (line_end == std::string_view::npos)
+        {
+            break;
+        }
+        offset = line_end + 1;
+    }
+    return entries;
+}
+
+[[nodiscard]] std::size_t find_list_separator(const std::string_view value, std::size_t offset) noexcept
+{
+    while (offset < value.size())
     {
         const auto separator = value.find(',', offset);
-        const auto length =
-            separator == std::string_view::npos ? value.size() - offset : separator - offset;
-        if (!output.empty())
+        if (separator == std::string_view::npos)
         {
-            output += ", ";
+            return separator;
         }
-        output += transform(trim(value.substr(offset, length)));
+        if (separator + 1 < value.size() && std::isspace(static_cast<unsigned char>(value[separator + 1])) != 0)
+        {
+            return separator;
+        }
+        offset = separator + 1;
+    }
+    return std::string_view::npos;
+}
+
+template <typename Transform>
+[[nodiscard]] std::string transform_list(const std::string_view value, const bool has_trailing_separator, Transform transform)
+{
+    auto non_whitespace_end = value.size();
+    while (non_whitespace_end > 0 && std::isspace(static_cast<unsigned char>(value[non_whitespace_end - 1])) != 0)
+    {
+        --non_whitespace_end;
+    }
+
+    std::string_view list_value = value;
+    std::string_view trailing_suffix;
+    if (has_trailing_separator && non_whitespace_end > 0 && value[non_whitespace_end - 1] == ',')
+    {
+        const auto trailing_comma = non_whitespace_end - 1;
+        list_value = value.substr(0, trailing_comma);
+        trailing_suffix = ", ";
+    }
+
+    if (trim(list_value).empty())
+    {
+        return trailing_suffix.empty() ? std::string { value } : std::string { trailing_suffix };
+    }
+
+    std::string output;
+    std::size_t offset = 0;
+    bool transformed_part = false;
+    while (offset <= list_value.size())
+    {
+        const auto separator = find_list_separator(list_value, offset);
+        const auto length = separator == std::string_view::npos ? list_value.size() - offset : separator - offset;
+        const auto part = trim(list_value.substr(offset, length));
+        if (!part.empty())
+        {
+            if (transformed_part)
+            {
+                output += ", ";
+            }
+            output += transform(part);
+            transformed_part = true;
+        }
         if (separator == std::string_view::npos)
         {
             break;
         }
         offset = separator + 1;
-    } while (offset <= value.size());
+    }
+    output += trailing_suffix;
     return output;
 }
 
@@ -122,6 +258,7 @@ std::string ProfileConverter::encrypt_document(const std::string_view plain_ini,
         throw std::invalid_argument("Header comment cannot contain line breaks.");
     }
 
+    const auto trailing_list_separators = find_trailing_list_separators(plain_ini);
     auto document = ProfileDocument::parse(plain_ini);
     const ProfileValueCipher profile_cipher;
     const FeatureCodec feature_codec;
@@ -140,11 +277,16 @@ std::string ProfileConverter::encrypt_document(const std::string_view plain_ini,
         {
             for (auto& entry : section.entries)
             {
+                const bool split_value = has_numeric_index_suffix(entry.key);
+                const bool has_trailing_separator = trailing_list_separators.contains(entry_id(section.name, entry.key));
                 entry.key = profile_cipher.encrypt(entry.key);
                 if (!entry.value.empty())
                 {
-                    entry.value = transform_list(entry.value, [&profile_cipher](const std::string_view part)
-                                                 { return profile_cipher.encrypt(part); });
+                    entry.value = split_value
+                                      ? transform_list(entry.value, has_trailing_separator,
+                                                       [&profile_cipher](const std::string_view part)
+                                                       { return profile_cipher.encrypt(part); })
+                                      : profile_cipher.encrypt(entry.value);
                 }
             }
         }
@@ -170,6 +312,7 @@ std::string ProfileConverter::encrypt_document(const std::string_view plain_ini,
 
 std::string ProfileConverter::decrypt_document(const std::string_view cipher_ini, const LineEnding line_ending) const
 {
+    const auto trailing_list_separators = find_trailing_list_separators(cipher_ini);
     auto document = ProfileDocument::parse(cipher_ini);
     const ProfileValueCipher profile_cipher;
     const FeatureCodec feature_codec;
@@ -188,11 +331,15 @@ std::string ProfileConverter::decrypt_document(const std::string_view cipher_ini
         {
             for (auto& entry : section.entries)
             {
+                const bool has_trailing_separator = trailing_list_separators.contains(entry_id(section.name, entry.key));
                 entry.key = profile_cipher.decrypt(entry.key);
                 if (!entry.value.empty())
                 {
-                    entry.value = transform_list(entry.value, [&profile_cipher](const std::string_view part)
-                                                 { return profile_cipher.decrypt(part); });
+                    entry.value = has_numeric_index_suffix(entry.key)
+                                      ? transform_list(entry.value, has_trailing_separator,
+                                                       [&profile_cipher](const std::string_view part)
+                                                       { return profile_cipher.decrypt(part); })
+                                      : profile_cipher.decrypt(entry.value);
                 }
             }
         }
